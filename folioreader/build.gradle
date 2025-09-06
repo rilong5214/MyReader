@@ -1,36 +1,42 @@
 apply plugin: 'com.android.library'
-apply from: '../config/quality/quality.gradle'
-apply plugin: 'com.github.dcendents.android-maven'
+//apply from: '../config/quality/quality.gradle'
+//apply plugin: 'com.github.dcendents.android-maven'
 apply plugin: 'kotlin-android'
-apply plugin: 'kotlin-android-extensions'
+apply plugin: 'kotlin-android-extensions' // USE THIS INSTEAD OF kotlin-parcelize
 
-ext {
-    bintrayRepo = 'maven'
-    bintrayName = 'folioreader'
+// ext {  // Add // here
+//    bintrayRepo = 'maven'
+//    bintrayName = 'folioreader'
+//
+//    publishedGroupId = 'com.folioreader'
+//    libraryName = 'FolioReader'
+//    artifact = 'folioreader'
+//
+//    libraryDescription = 'An epub reader for Android'
+//
+//    siteUrl = 'https://github.com/FolioReader/FolioReader-Android'
+//    gitUrl = 'https://github.com/FolioReader/FolioReader-Android.git'
+//
+//    libraryVersion = versions.folioreaderSdk
+//
+//    developerId = 'mobisystech'
+//    developerName = 'Folio Reader'
+//    developerEmail = 'mahavir@codetoart.com'
+//
+//    licenseName = 'FreeBSD License'
+//    licenseUrl = 'https://en.wikipedia.org/wiki/FreeBSD_Documentation_License#License'
+//    allLicenses = ["FreeBSD"]
+// } // Add // here
 
-    publishedGroupId = 'com.folioreader'
-    libraryName = 'FolioReader'
-    artifact = 'folioreader'
-
-    libraryDescription = 'An epub reader for Android'
-
-    siteUrl = 'https://github.com/FolioReader/FolioReader-Android'
-    gitUrl = 'https://github.com/FolioReader/FolioReader-Android.git'
-
-    libraryVersion = versions.folioreaderSdk
-
-    developerId = 'mobisystech'
-    developerName = 'Folio Reader'
-    developerEmail = 'mahavir@codetoart.com'
-
-    licenseName = 'FreeBSD License'
-    licenseUrl = 'https://en.wikipedia.org/wiki/FreeBSD_Documentation_License#License'
-    allLicenses = ["FreeBSD"]
-}
 
 android {
     useLibrary 'org.apache.http.legacy'
-    compileSdkVersion versions.androidCompileSdk
+    compileSdkVersion 28
+
+    // ADD THIS BLOCK
+    androidExtensions {
+        experimental = true
+    }
 
     defaultConfig {
         minSdkVersion versions.androidMinSdk
@@ -71,12 +77,12 @@ android {
         lintConfig file("lint.xml")
     }
 
-    checkstyle {
-        ignoreFailures = true
-    }
+    //checkstyle {
+    //    ignoreFailures = true
+    //}
 }
 
-apply from: '../folioreader/bintray/installv1.gradle'
+//apply from: '../folioreader/bintray/installv1.gradle'
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
 
@@ -104,9 +110,14 @@ dependencies {
     implementation "com.squareup.retrofit2:converter-jackson:$versions.retrofit"
     implementation "com.squareup.retrofit2:converter-gson:$versions.retrofit"
 
+    implementation "com.github.kittinunf.fuel:fuel:2.3.1"
+    implementation "com.github.kittinunf.fuel:fuel-android:2.3.1"
+
     // R2 modules
     api("com.github.codetoart:r2-shared-kotlin:$versions.r2SharedKotlin") {
         changing = true
+        exclude group: 'com.github.kittinunf.fuel', module: 'fuel'
+        exclude group: 'com.github.kittinunf.fuel', module: 'fuel-android'
     }
     api("com.github.codetoart:r2-streamer-kotlin:$versions.r2StreamerKotlin") {
         exclude group: "org.slf4j", module: "slf4j-api"
@@ -119,4 +130,4 @@ dependencies {
     // Lifecycle
     implementation "androidx.lifecycle:lifecycle-extensions:$versions.lifecycle"
 }
-apply from: '../folioreader/bintray/bintrayv1.gradle'
+//apply from: '../folioreader/bintray/bintrayv1.gradle'
