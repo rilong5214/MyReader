@@ -9,7 +9,7 @@ android {
     namespace 'com.folioreader'
 
     useLibrary 'org.apache.http.legacy'
-    compileSdkVersion 33 // Make sure this aligns with your project's needs or versions.gradle
+    compileSdkVersion versions.androidCompileSdk
 
     defaultConfig {
         minSdkVersion versions.androidMinSdk
@@ -65,20 +65,21 @@ android {
 
 dependencies {
     // Dependencies remain the same
+    implementation 'androidx.localbroadcastmanager:localbroadcastmanager:1.1.0'
     implementation fileTree(include: ['*.jar'], dir: 'libs') // Ensure 'libs' exists and is correct
     implementation "androidx.appcompat:appcompat:$versions.appcompat"
     implementation "androidx.constraintlayout:constraintlayout:$versions.constraintLayout"
     implementation "androidx.recyclerview:recyclerview:$versions.recyclerview"
     implementation "com.google.android.material:material:$versions.material"
-    testImplementation 'junit:junit:4.12' // Consider updating if possible
+    testImplementation 'junit:junit:4.13.2' // Consider updating if possible
 
-    implementation 'org.slf4j:slf4j-android:1.7.25' // Consider updating if possible
+    implementation 'org.slf4j:slf4j-android:1.7.36' // Consider updating if possible
     implementation 'com.daimajia.swipelayout:library:1.2.0@aar'
 
     //Kotlin
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$versions.kotlin" // Ensure this uses a version compatible with jvmTarget '11'
 
-    implementation 'org.greenrobot:eventbus:3.1.1' // Consider updating if possible
+    implementation 'org.greenrobot:eventbus:3.3.1' // Consider updating if possible
 
     implementation "com.fasterxml.jackson.core:jackson-core:$versions.jackson"
     implementation "com.fasterxml.jackson.core:jackson-annotations:$versions.jackson"
@@ -103,5 +104,6 @@ dependencies {
         changing = true
     }
 
-    implementation 'org.springframework:spring-core:4.3.19.RELEASE' // This is quite old, consider if it's truly needed or can be updated/replaced
+    implementation 'org.springframework:spring-core:6.2.10'
+    // This is quite old, consider if it's truly needed or can be updated/replaced
 }

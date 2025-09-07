@@ -196,7 +196,7 @@ class SearchAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder> {
                     // In SearchAdapter.kt, NormalViewHolder, for SEARCH_RESULT_ITEM:
                     // ...
                     val beforeText = searchLocator.pre ?: ""
-                    val highlightedText = searchLocator.highlight.content ?: "" // Accessing the field from HighlightImpl
+                    val highlightedText = searchLocator.highlight.content // content is non-null; no Elvis needed
                     val afterText = searchLocator.post ?: ""
 
                     val fullText = beforeText + highlightedText + afterText

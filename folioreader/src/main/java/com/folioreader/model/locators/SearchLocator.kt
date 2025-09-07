@@ -95,12 +95,12 @@ class SearchLocator : Parcelable {
         text = parcel.readParcelable(HighlightText::class.java.classLoader)
         pre = parcel.readString()
         post = parcel.readString()
-        highlight = parcel.readSerializable(HighlightImpl::class.java.classLoader, HighlightImpl::class.java) as? HighlightImpl
+        highlight = parcel.readSerializable(HighlightImpl::class.java.classLoader, HighlightImpl::class.java)
             ?: HighlightImpl()
-        textSelection = parcel.readSerializable(TextSelectionImpl::class.java.classLoader, TextSelectionImpl::class.java) as? TextSelectionImpl
+        textSelection = parcel.readSerializable(TextSelectionImpl::class.java.classLoader, TextSelectionImpl::class.java)
             ?: TextSelectionImpl()
         rank = parcel.readInt()
-        searchItemType = parcel.readSerializable(SearchItemType::class.java.classLoader, SearchItemType::class.java) as? SearchItemType
+        searchItemType = parcel.readSerializable(SearchItemType::class.java.classLoader, SearchItemType::class.java)
         primaryContents = parcel.readString()
     }
 

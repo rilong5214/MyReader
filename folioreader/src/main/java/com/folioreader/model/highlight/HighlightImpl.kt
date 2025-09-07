@@ -89,8 +89,8 @@ class HighlightImpl : Highlight, Serializable {
             highlight.rangy = json.optString(Highlight.RANGY)
             highlight.note = json.optString(Highlight.NOTE)
             highlight.uuid = json.optString(Highlight.UUID, UUID.randomUUID().toString()) // Provide default if missing
-            highlight.contentPre = json.optString(Highlight.CONTENT_PRE, null)
-            highlight.contentPost = json.optString(Highlight.CONTENT_POST, null)
+            highlight.contentPre = if (json.has(Highlight.CONTENT_PRE) && !json.isNull(Highlight.CONTENT_PRE)) json.optString(Highlight.CONTENT_PRE) else null
+            highlight.contentPost = if (json.has(Highlight.CONTENT_POST) && !json.isNull(Highlight.CONTENT_POST)) json.optString(Highlight.CONTENT_POST) else null
             return highlight
         }
     }

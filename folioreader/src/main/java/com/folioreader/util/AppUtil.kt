@@ -43,13 +43,12 @@ class AppUtil {
                 val keysItr = jObject.keys()
                 while (keysItr.hasNext()) {
                     val key = keysItr.next()
-                    var value: Any? = null
-                    value = jObject.get(key)
+                    var value: Any? = jObject.get(key)
 
                     if (value is JSONObject) {
                         value = toMap(value.toString())
                     }
-                    map[key] = value!!.toString()
+                    map[key] = value.toString()
                 }
             } catch (e: JSONException) {
                 Log.e(LOG_TAG, "toMap failed", e)
@@ -68,7 +67,7 @@ class AppUtil {
             for (_value in values) {
                 val value = _value.trim { it <= ' ' }
 
-                if (value.toLowerCase().startsWith("charset=")) {
+                if (value.lowercase(Locale.getDefault()).startsWith("charset=")) {
                     charset = value.substring("charset=".length)
                     break
                 }

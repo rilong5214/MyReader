@@ -505,6 +505,7 @@ class FolioPageFragment : Fragment(),
             }
         }
 
+        @Deprecated("Overrides deprecated WebViewClient method on older APIs")
         override fun shouldOverrideUrlLoading(view: WebView, url: String): Boolean {
 
             if (url.isEmpty())
@@ -521,6 +522,7 @@ class FolioPageFragment : Fragment(),
         }
 
         // prevent favicon.ico to be loaded automatically
+        @Deprecated("Overrides deprecated WebViewClient method on older APIs")
         override fun shouldInterceptRequest(view: WebView, url: String): WebResourceResponse? {
             if (url.lowercase(Locale.ROOT).contains("/favicon.ico")) {
                 try {

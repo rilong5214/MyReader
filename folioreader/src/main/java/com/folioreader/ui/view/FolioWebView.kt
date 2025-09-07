@@ -164,12 +164,12 @@ class FolioWebView : WebView {
     }
 
     private inner class HorizontalGestureListener : GestureDetector.SimpleOnGestureListener() {
-        override fun onScroll(e1: MotionEvent, e2: MotionEvent, distanceX: Float, distanceY: Float): Boolean {
+        override fun onScroll(e1: MotionEvent?, e2: MotionEvent, distanceX: Float, distanceY: Float): Boolean {
             lastScrollType = LastScrollType.USER
             return false
         }
 
-        override fun onFling(e1: MotionEvent, e2: MotionEvent, velocityX: Float, velocityY: Float): Boolean {
+        override fun onFling(e1: MotionEvent?, e2: MotionEvent, velocityX: Float, velocityY: Float): Boolean {
             if (!webViewPager.isScrolling) {
                 uiHandler.postDelayed({
                     scrollTo(getScrollXPixelsForPage(webViewPager.currentItem), 0)
@@ -187,12 +187,12 @@ class FolioWebView : WebView {
     }
 
     private inner class VerticalGestureListener : GestureDetector.SimpleOnGestureListener() {
-        override fun onScroll(e1: MotionEvent, e2: MotionEvent, distanceX: Float, distanceY: Float): Boolean {
+        override fun onScroll(e1: MotionEvent?, e2: MotionEvent, distanceX: Float, distanceY: Float): Boolean {
             lastScrollType = LastScrollType.USER
             return false
         }
 
-        override fun onFling(e1: MotionEvent, e2: MotionEvent, velocityX: Float, velocityY: Float): Boolean {
+        override fun onFling(e1: MotionEvent?, e2: MotionEvent, velocityX: Float, velocityY: Float): Boolean {
             lastScrollType = LastScrollType.USER
             return false
         }

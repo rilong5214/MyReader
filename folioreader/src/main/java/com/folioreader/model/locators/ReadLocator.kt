@@ -41,8 +41,8 @@ class ReadLocator : Parcelable {
         created = parcel.readLong()
         locations = parcel.readParcelable(Locations::class.java.classLoader)
         text = parcel.readParcelable(HighlightText::class.java.classLoader)
-        highlight = parcel.readSerializable(HighlightImpl::class.java.classLoader, HighlightImpl::class.java) as? HighlightImpl
-        textSelection = parcel.readSerializable(TextSelectionImpl::class.java.classLoader, TextSelectionImpl::class.java) as? TextSelectionImpl
+        highlight = parcel.readSerializable(HighlightImpl::class.java.classLoader, HighlightImpl::class.java)
+        textSelection = parcel.readSerializable(TextSelectionImpl::class.java.classLoader, TextSelectionImpl::class.java)
         rangy = parcel.readString()
         bookId = parcel.readString()
         pageId = parcel.readString()
