@@ -30,7 +30,7 @@ allprojects {
         google()
         mavenCentral()
         // REMOVED: jcenter() repository
-        maven { url "https://jitpack.io" }
+        maven { url = "https://jitpack.io" }
     }
 }
 

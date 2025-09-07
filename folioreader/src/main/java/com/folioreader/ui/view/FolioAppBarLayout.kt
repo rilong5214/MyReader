@@ -1,3 +1,4 @@
+@file:Suppress("DEPRECATION", "OverridingDeprecatedMember", "OVERRIDE_DEPRECATION")
 package com.folioreader.ui.view
 
 import android.content.Context
@@ -39,6 +40,7 @@ class FolioAppBarLayout : AppBarLayout {
         }
     }
 
+    @Deprecated("Overriding deprecated platform API to support pre-21 devices")
     override fun fitSystemWindows(insets: Rect?): Boolean {
         Log.v(LOG_TAG, "-> fitSystemWindows")
         // For API level 19 and below

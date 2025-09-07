@@ -1,3 +1,4 @@
+@file:Suppress("DEPRECATION", "OVERRIDE_DEPRECATION", "REDUNDANT_ELSE_IN_WHEN", "KotlinConstantConditions")
 package com.folioreader.ui.activity
 
 import android.app.SearchManager
@@ -232,12 +233,8 @@ class SearchActivity : AppCompatActivity(), OnItemClickListener {
 
     override fun onBackPressed() {
         Log.v(LOG_TAG, "-> onBackPressed")
-        // Default behavior is to call navigateBack() or finish().
-        // If this is meant to be custom, ensure it does what's expected.
-        // Often, it's super.onBackPressed() or a custom navigation like navigateBack().
-        // For now, let's assume navigateBack() is the desired behavior based on collapse button.
-        navigateBack() 
-        // super.onBackPressed() // Or this, if navigateBack() is too specific.
+        navigateBack()
+        super.onBackPressed()
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean { // Menu is non-null here

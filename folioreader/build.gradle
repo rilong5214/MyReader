@@ -6,7 +6,7 @@ apply from: '../versions.gradle' // **** ADD THIS LINE ****
 
 android {
     // Add namespace (use your actual package from AndroidManifest.xml)
-    namespace 'com.folioreader'
+    namespace = 'com.folioreader'
 
     useLibrary 'org.apache.http.legacy'
     compileSdkVersion versions.androidCompileSdk
@@ -39,7 +39,7 @@ android {
 
     // Added buildFeatures for View Binding
     buildFeatures {
-        viewBinding true
+        viewBinding = true
     }
 
     packagingOptions {
@@ -58,8 +58,8 @@ android {
     }
 
     lintOptions {
-        abortOnError false
-        lintConfig file("lint.xml")
+        abortOnError = false
+        lintConfig = file("lint.xml")
     }
 }
 
@@ -81,10 +81,12 @@ dependencies {
 
     implementation 'org.greenrobot:eventbus:3.3.1' // Consider updating if possible
 
-    implementation "com.fasterxml.jackson.core:jackson-core:$versions.jackson"
-    implementation "com.fasterxml.jackson.core:jackson-annotations:$versions.jackson"
-    implementation "com.fasterxml.jackson.core:jackson-databind:$versions.jackson"
-    implementation "com.fasterxml.jackson.module:jackson-module-kotlin:$versions.jackson"
+    // Use Jackson BOM to align versions consistently
+    implementation platform("com.fasterxml.jackson:jackson-bom:$versions.jackson")
+    implementation "com.fasterxml.jackson.core:jackson-core"
+    implementation "com.fasterxml.jackson.core:jackson-annotations"
+    implementation "com.fasterxml.jackson.core:jackson-databind"
+    implementation "com.fasterxml.jackson.module:jackson-module-kotlin"
     implementation "com.google.code.gson:gson:$versions.gson"
 
     implementation "com.squareup.retrofit2:retrofit:$versions.retrofit"

@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:Suppress("DEPRECATION", "OverridingDeprecatedMember", "OVERRIDE_DEPRECATION", "REDUNDANT_ELSE_IN_WHEN", "KotlinConstantConditions")
 package com.folioreader.ui.activity
 
 import android.Manifest
@@ -787,6 +788,8 @@ class FolioActivity : AppCompatActivity(), FolioActivityCallback, MediaControlle
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
 
+        super.onActivityResult(requestCode, resultCode, data)
+
         if (requestCode == RequestCode.SEARCH.value) {
             Log.v(LOG_TAG, "-> onActivityResult -> " + RequestCode.SEARCH)
 
@@ -1033,6 +1036,7 @@ class FolioActivity : AppCompatActivity(), FolioActivityCallback, MediaControlle
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         when (requestCode) {
             Constants.WRITE_EXTERNAL_STORAGE_REQUEST -> if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 setupBook()

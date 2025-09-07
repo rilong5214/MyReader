@@ -5,7 +5,7 @@ apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-parcelize' // ADDED for @Parcelize support
 
 android {
-    namespace "com.folioreader.android.sample" // ADDED namespace
+    namespace = "com.folioreader.android.sample" // ADDED namespace
 
     compileSdkVersion versions.androidCompileSdk
 
@@ -16,7 +16,7 @@ android {
         versionCode versions.projectVersionCode
         versionName versions.projectVersionName
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
-        multiDexEnabled true
+        multiDexEnabled = true
     }
 
     buildTypes {
@@ -28,7 +28,7 @@ android {
 
     // ADDED View Binding
     buildFeatures {
-        viewBinding true
+        viewBinding = true
     }
 
     compileOptions {
@@ -56,7 +56,7 @@ android {
     }
 
     lintOptions {
-        abortOnError false
+        abortOnError = false
     }
 }
 
@@ -71,10 +71,12 @@ dependencies {
     implementation project(':folioreader')
     //implementation "com.folioreader:folioreader:$versions.folioreaderSdk"
 
-    implementation "com.fasterxml.jackson.core:jackson-core:$versions.jackson"
-    implementation "com.fasterxml.jackson.core:jackson-annotations:$versions.jackson"
-    implementation "com.fasterxml.jackson.core:jackson-databind:$versions.jackson"
-    implementation "com.fasterxml.jackson.module:jackson-module-kotlin:$versions.jackson"
+    // Use Jackson BOM to manage all jackson module versions consistently
+    implementation platform("com.fasterxml.jackson:jackson-bom:$versions.jackson")
+    implementation "com.fasterxml.jackson.core:jackson-core"
+    implementation "com.fasterxml.jackson.core:jackson-annotations"
+    implementation "com.fasterxml.jackson.core:jackson-databind"
+    implementation "com.fasterxml.jackson.module:jackson-module-kotlin"
 
     //progressBar error solve
     //configurations.matching { it.name == '_internal_aapt2_binary' }.all { config ->

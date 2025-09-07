@@ -1,3 +1,4 @@
+@file:Suppress("DEPRECATION")
 package com.folioreader.viewmodels
 
 import android.os.Bundle

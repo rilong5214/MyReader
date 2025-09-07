@@ -1,3 +1,4 @@
+@file:Suppress("DEPRECATION", "OverridingDeprecatedMember", "OVERRIDE_DEPRECATION", "REDUNDANT_ELSE_IN_WHEN", "KotlinConstantConditions")
 package com.folioreader.ui.view
 
 import android.content.Context

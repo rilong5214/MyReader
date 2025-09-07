@@ -1,3 +1,4 @@
+@file:Suppress("DEPRECATION", "OverridingDeprecatedMember", "OVERRIDE_DEPRECATION", "REDUNDANT_ELSE_IN_WHEN", "KotlinConstantConditions")
 package com.folioreader.ui.fragment
 
 import android.annotation.SuppressLint
@@ -156,16 +157,15 @@ class FolioPageFragment : Fragment(),
         //TODO: Replace with type-safe getParcelable (API 33+) if possible
         searchLocatorVisible = savedInstanceState?.getParcelable(BUNDLE_SEARCH_LOCATOR)
 
-        if (spineItem != null) { // Should be lateinit, so null check might be redundant if initialized properly
-            // SMIL Parsing not yet implemented in r2-streamer-kotlin
-            //if (spineItem.getProperties().contains("media-overlay")) {
-            //    mediaController = new MediaController(getActivity(), MediaController.MediaType.SMIL, this);
-            //    hasMediaOverlay = true;
-            //} else {
-            mediaController = MediaController(activity, MediaController.MediaType.TTS, this)
-            mediaController!!.setTextToSpeech(activity)
-            //}
-        }
+        // spineItem is lateinit and initialized from arguments above, so the null check was redundant
+        // SMIL Parsing not yet implemented in r2-streamer-kotlin
+        //if (spineItem.getProperties().contains("media-overlay")) {
+        //    mediaController = new MediaController(getActivity(), MediaController.MediaType.SMIL, this);
+        //    hasMediaOverlay = true;
+        //} else {
+        mediaController = MediaController(activity, MediaController.MediaType.TTS, this)
+        mediaController!!.setTextToSpeech(activity)
+        //}
         highlightStyle = HighlightImpl.HighlightStyle.classForStyle(HighlightImpl.HighlightStyle.Normal)
         mRootView = inflater.inflate(R.layout.folio_page_fragment, container, false)
         mPagesLeftTextView = mRootView!!.findViewById<View>(R.id.pagesLeft) as TextView
