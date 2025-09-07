@@ -2,13 +2,14 @@ apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
 // REPLACED: kotlin-android-extensions with kotlin-parcelize
 apply plugin: 'kotlin-parcelize'
+apply from: '../versions.gradle' // **** ADD THIS LINE ****
 
 android {
     // Add namespace (use your actual package from AndroidManifest.xml)
     namespace 'com.folioreader'
 
     useLibrary 'org.apache.http.legacy'
-    compileSdkVersion 33
+    compileSdkVersion 33 // Make sure this aligns with your project's needs or versions.gradle
 
     defaultConfig {
         minSdkVersion versions.androidMinSdk
@@ -20,7 +21,7 @@ android {
         main {
             manifest.srcFile 'AndroidManifest.xml'
             java.srcDirs = ['src/main/java']
-            res.srcDirs = ['res']
+            res.srcDirs = ['res'] // Ensure this path is correct: 'src/main/res' or just 'res'
         }
         test {
             java.srcDirs = ['src/test/java']
@@ -28,12 +29,12 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility JavaVersion.VERSION_11 // **** CHANGE THIS ****
+        targetCompatibility JavaVersion.VERSION_11 // **** CHANGE THIS ****
     }
 
     kotlinOptions {
-        jvmTarget = '1.8'
+        jvmTarget = '11' // **** CHANGE THIS ****
     }
 
     // Added buildFeatures for View Binding
@@ -64,20 +65,20 @@ android {
 
 dependencies {
     // Dependencies remain the same
-    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation fileTree(include: ['*.jar'], dir: 'libs') // Ensure 'libs' exists and is correct
     implementation "androidx.appcompat:appcompat:$versions.appcompat"
     implementation "androidx.constraintlayout:constraintlayout:$versions.constraintLayout"
     implementation "androidx.recyclerview:recyclerview:$versions.recyclerview"
     implementation "com.google.android.material:material:$versions.material"
-    testImplementation 'junit:junit:4.12'
+    testImplementation 'junit:junit:4.12' // Consider updating if possible
 
-    implementation 'org.slf4j:slf4j-android:1.7.25'
+    implementation 'org.slf4j:slf4j-android:1.7.25' // Consider updating if possible
     implementation 'com.daimajia.swipelayout:library:1.2.0@aar'
 
     //Kotlin
-    implementation "org.jetbrains.kotlin:kotlin-stdlib:$versions.kotlin"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:$versions.kotlin" // Ensure this uses a version compatible with jvmTarget '11'
 
-    implementation 'org.greenrobot:eventbus:3.1.1'
+    implementation 'org.greenrobot:eventbus:3.1.1' // Consider updating if possible
 
     implementation "com.fasterxml.jackson.core:jackson-core:$versions.jackson"
     implementation "com.fasterxml.jackson.core:jackson-annotations:$versions.jackson"
@@ -89,8 +90,8 @@ dependencies {
     implementation "com.squareup.retrofit2:converter-jackson:$versions.retrofit"
     implementation "com.squareup.retrofit2:converter-gson:$versions.retrofit"
 
-    implementation "com.github.kittinunf.fuel:fuel:2.3.1"
-    implementation "com.github.kittinunf.fuel:fuel-android:2.3.1"
+    implementation "com.github.kittinunf.fuel:fuel:2.3.1" // Consider updating if possible
+    implementation "com.github.kittinunf.fuel:fuel-android:2.3.1" // Consider updating if possible
 
     api("com.github.codetoart:r2-shared-kotlin:$versions.r2SharedKotlin") {
         changing = true
@@ -102,6 +103,5 @@ dependencies {
         changing = true
     }
 
-    implementation 'org.springframework:spring-core:4.3.19.RELEASE'
-
+    implementation 'org.springframework:spring-core:4.3.19.RELEASE' // This is quite old, consider if it's truly needed or can be updated/replaced
 }

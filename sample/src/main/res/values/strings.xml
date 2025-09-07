@@ -1,3 +1,7 @@
 <resources>
     <string name="app_name">FolioReader Sample</string>
+    <string name="menu_item_copy">Copy</string>
+    <string name="menu_item_define">Define</string>
+    <string name="menu_item_highlight">Highlight</string>
+    <string name="menu_item_share">Share</string>
 </resources>
