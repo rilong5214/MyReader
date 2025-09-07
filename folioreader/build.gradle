@@ -1,42 +1,14 @@
 apply plugin: 'com.android.library'
-//apply from: '../config/quality/quality.gradle'
-//apply plugin: 'com.github.dcendents.android-maven'
 apply plugin: 'kotlin-android'
-apply plugin: 'kotlin-android-extensions' // USE THIS INSTEAD OF kotlin-parcelize
-
-// ext {  // Add // here
-//    bintrayRepo = 'maven'
-//    bintrayName = 'folioreader'
-//
-//    publishedGroupId = 'com.folioreader'
-//    libraryName = 'FolioReader'
-//    artifact = 'folioreader'
-//
-//    libraryDescription = 'An epub reader for Android'
-//
-//    siteUrl = 'https://github.com/FolioReader/FolioReader-Android'
-//    gitUrl = 'https://github.com/FolioReader/FolioReader-Android.git'
-//
-//    libraryVersion = versions.folioreaderSdk
-//
-//    developerId = 'mobisystech'
-//    developerName = 'Folio Reader'
-//    developerEmail = 'mahavir@codetoart.com'
-//
-//    licenseName = 'FreeBSD License'
-//    licenseUrl = 'https://en.wikipedia.org/wiki/FreeBSD_Documentation_License#License'
-//    allLicenses = ["FreeBSD"]
-// } // Add // here
-
+// REPLACED: kotlin-android-extensions with kotlin-parcelize
+apply plugin: 'kotlin-parcelize'
 
 android {
-    useLibrary 'org.apache.http.legacy'
-    compileSdkVersion 28
+    // Add namespace (use your actual package from AndroidManifest.xml)
+    namespace 'com.folioreader'
 
-    // ADD THIS BLOCK
-    androidExtensions {
-        experimental = true
-    }
+    useLibrary 'org.apache.http.legacy'
+    compileSdkVersion 33
 
     defaultConfig {
         minSdkVersion versions.androidMinSdk
@@ -55,6 +27,20 @@ android {
         test {
             java.srcDirs = ['src/test/java']
         }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    kotlinOptions {
+        jvmTarget = '1.8'
+    }
+
+    // Added buildFeatures for View Binding
+    buildFeatures {
+        viewBinding true
     }
 
     packagingOptions {
@@ -76,16 +62,11 @@ android {
         abortOnError false
         lintConfig file("lint.xml")
     }
-
-    //checkstyle {
-    //    ignoreFailures = true
-    //}
 }
 
-//apply from: '../folioreader/bintray/installv1.gradle'
 dependencies {
+    // Dependencies remain the same
     implementation fileTree(include: ['*.jar'], dir: 'libs')
-
     implementation "androidx.appcompat:appcompat:$versions.appcompat"
     implementation "androidx.constraintlayout:constraintlayout:$versions.constraintLayout"
     implementation "androidx.recyclerview:recyclerview:$versions.recyclerview"
@@ -113,7 +94,6 @@ dependencies {
     implementation "com.github.kittinunf.fuel:fuel:2.3.1"
     implementation "com.github.kittinunf.fuel:fuel-android:2.3.1"
 
-    // R2 modules
     api("com.github.codetoart:r2-shared-kotlin:$versions.r2SharedKotlin") {
         changing = true
         exclude group: 'com.github.kittinunf.fuel', module: 'fuel'
@@ -124,10 +104,6 @@ dependencies {
         changing = true
     }
 
-    // Only ReflectionUtils in Spring framework is used
     implementation 'org.springframework:spring-core:4.3.19.RELEASE'
 
-    // Lifecycle
-    implementation "androidx.lifecycle:lifecycle-extensions:$versions.lifecycle"
 }
-//apply from: '../folioreader/bintray/bintrayv1.gradle'

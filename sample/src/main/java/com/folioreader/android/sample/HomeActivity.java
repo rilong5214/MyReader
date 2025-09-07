@@ -108,24 +108,36 @@ public class HomeActivity extends AppCompatActivity
         new Thread(new Runnable() {
             @Override
             public void run() {
-                ArrayList<HighLight> highlightList = null;
+                List<HighLight> highlightList = null; // Changed from ArrayList to List
                 ObjectMapper objectMapper = new ObjectMapper();
                 try {
-                    highlightList = objectMapper.readValue(
+                    // objectMapper.readValue returns a List<HighlightData>, which is compatible with List<HighLight>
+                    // because HighlightData implements HighLight.
+                    List<HighlightData> parsedData = objectMapper.readValue(
                             loadAssetTextAsString("highlights/highlights_data.json"),
                             new TypeReference<List<HighlightData>>() {
                             });
+                    if (parsedData != null) {
+                        highlightList = new ArrayList<>(parsedData); // Ensure it's an ArrayList if needed by saveReceivedHighLights, and copy
+                    }
                 } catch (IOException e) {
                     e.printStackTrace();
+                    // It's good practice to log the error or handle it more gracefully
                 }
 
-                if (highlightList == null) {
-                    folioReader.saveReceivedHighLights(highlightList, new OnSaveHighlight() {
+                // Corrected condition: only save if highlightList is not null and not empty
+                if (highlightList != null && !highlightList.isEmpty()) {
+                    // Pass an ArrayList to be safe, as some methods might specifically require it over a generic List.
+                    // If saveReceivedHighLights accepts List<HighLight>, new ArrayList<>() is not strictly necessary but doesn't hurt.
+                    folioReader.saveReceivedHighLights(new ArrayList<>(highlightList), new OnSaveHighlight() {
                         @Override
                         public void onFinished() {
                             //You can do anything on successful saving highlight list
+                            Log.d(LOG_TAG, "Highlights saved successfully.");
                         }
                     });
+                } else {
+                    Log.d(LOG_TAG, "No highlights to save or error in parsing.");
                 }
             }
         }).start();

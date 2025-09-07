@@ -13,7 +13,9 @@ import androidx.appcompat.widget.SearchView
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.ColorUtils
 import com.folioreader.Config
-import com.folioreader.R
+// Corrected R class import for appcompat views if necessary,
+// but direct access to androidx.appcompat.R.id is more robust.
+// import com.folioreader.R // This R is for the module's own resources
 import com.folioreader.util.UiUtil
 
 class FolioSearchView : SearchView {
@@ -25,9 +27,10 @@ class FolioSearchView : SearchView {
 
     private lateinit var searchAutoComplete: SearchView.SearchAutoComplete
 
-    constructor(context: Context?) : super(context)
-    constructor(context: Context?, attrs: AttributeSet?) : super(context, attrs)
-    constructor(context: Context?, attrs: AttributeSet?, defStyleAttr: Int) : super(context, attrs, defStyleAttr)
+    // Corrected constructors to take non-nullable Context
+    constructor(context: Context) : super(context)
+    constructor(context: Context, attrs: AttributeSet?) : super(context, attrs)
+    constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int) : super(context, attrs, defStyleAttr)
 
     fun init(componentName: ComponentName, config: Config) {
         Log.v(LOG_TAG, "-> init")
@@ -43,38 +46,42 @@ class FolioSearchView : SearchView {
     private fun adjustLayout() {
         Log.v(LOG_TAG, "-> adjustLayout")
 
-        // Hide searchHintIcon
-        val searchMagIcon: View = findViewById(R.id.search_mag_icon)
+        // Hide searchHintIcon by referencing the correct R class
+        val searchMagIcon: View = findViewById(androidx.appcompat.R.id.search_mag_icon)
         searchMagIcon.layoutParams = LinearLayout.LayoutParams(0, 0)
 
-        // Remove left margin of search_edit_frame
-        val searchEditFrame: View = findViewById(R.id.search_edit_frame)
+        // Remove left margin of search_edit_frame by referencing the correct R class
+        val searchEditFrame: View = findViewById(androidx.appcompat.R.id.search_edit_frame)
         (searchEditFrame.layoutParams as ViewGroup.MarginLayoutParams).leftMargin = 0
     }
 
     private fun applyTheme(config: Config) {
         Log.v(LOG_TAG, "-> applyTheme")
 
-        val searchCloseButton: ImageView = findViewById(R.id.search_close_btn)
+        // Reference the correct R class
+        val searchCloseButton: ImageView = findViewById(androidx.appcompat.R.id.search_close_btn)
         UiUtil.setColorIntToDrawable(config.themeColor, searchCloseButton.drawable)
 
-        searchAutoComplete = findViewById(R.id.search_src_text)
+        // Reference the correct R class
+        searchAutoComplete = findViewById(androidx.appcompat.R.id.search_src_text)
         UiUtil.setEditTextCursorColor(searchAutoComplete, config.themeColor)
         UiUtil.setEditTextHandleColor(searchAutoComplete, config.themeColor)
         searchAutoComplete.highlightColor = ColorUtils.setAlphaComponent(config.themeColor, 85)
         if (config.isNightMode) {
-            searchAutoComplete.setTextColor(ContextCompat.getColor(context, R.color.night_title_text_color))
-            searchAutoComplete.setHintTextColor(ContextCompat.getColor(context, R.color.night_text_color))
+            searchAutoComplete.setTextColor(ContextCompat.getColor(context, com.folioreader.R.color.night_title_text_color))
+            searchAutoComplete.setHintTextColor(ContextCompat.getColor(context, com.folioreader.R.color.night_text_color))
         } else {
-            searchAutoComplete.setHintTextColor(ContextCompat.getColor(context, R.color.edit_text_hint_color))
+            searchAutoComplete.setHintTextColor(ContextCompat.getColor(context, com.folioreader.R.color.edit_text_hint_color))
         }
     }
 
     fun setDayMode() {
-        searchAutoComplete.setTextColor(ContextCompat.getColor(context, R.color.black))
+        // Assuming R.color.black is from your module
+        searchAutoComplete.setTextColor(ContextCompat.getColor(context, com.folioreader.R.color.black))
     }
 
     fun setNightMode() {
-        searchAutoComplete.setTextColor(ContextCompat.getColor(context, R.color.white))
+        // Assuming R.color.white is from your module
+        searchAutoComplete.setTextColor(ContextCompat.getColor(context, com.folioreader.R.color.white))
     }
 }

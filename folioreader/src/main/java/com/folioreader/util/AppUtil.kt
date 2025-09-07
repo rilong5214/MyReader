@@ -102,7 +102,7 @@ class AppUtil {
                     obj.toString()
                 )
             } catch (e: JSONException) {
-                Log.e(LOG_TAG, e.message)
+                Log.e(LOG_TAG, e.message ?: "JSONException occurred")
             }
 
         }
@@ -115,7 +115,7 @@ class AppUtil {
                     val jsonObject = JSONObject(json)
                     return Config(jsonObject)
                 } catch (e: JSONException) {
-                    Log.e(LOG_TAG, e.message)
+                    Log.e(LOG_TAG, e.message ?: "JSONException occurred")
                     return null
                 }
 
@@ -187,6 +187,14 @@ class AppUtil {
         }
     }
 }
+
+
+
+
+
+
+
+
 
 
 

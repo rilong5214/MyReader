@@ -6,6 +6,7 @@ buildscript {
     repositories {
         google()
         mavenCentral()
+        // REMOVED: jcenter() is deprecated and no longer supported
     }
 
     dependencies {
@@ -14,13 +15,11 @@ buildscript {
         // NOTE: Do not place your application dependencies here; they belong
         // in the individual module build.gradle files
 
-        // classpath 'com.github.dcendents:android-maven-gradle-plugin:2.1'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$versions.kotlin"
     }
 }
 
 allprojects {
-
     configurations.all {
         resolutionStrategy {
             cacheChangingModulesFor 0, 'seconds'
@@ -28,8 +27,9 @@ allprojects {
     }
 
     repositories {
-        mavenCentral()
         google()
+        mavenCentral()
+        // REMOVED: jcenter() repository
         maven { url "https://jitpack.io" }
     }
 }

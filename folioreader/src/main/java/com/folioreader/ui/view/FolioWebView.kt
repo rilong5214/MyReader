@@ -25,6 +25,7 @@ import androidx.core.view.GestureDetectorCompat
 import com.folioreader.Config
 import com.folioreader.Constants
 import com.folioreader.R
+import com.folioreader.databinding.TextSelectionBinding
 import com.folioreader.model.DisplayUnit
 import com.folioreader.model.HighLight
 import com.folioreader.model.HighlightImpl.HighlightStyle
@@ -37,39 +38,36 @@ import com.folioreader.util.AppUtil
 import com.folioreader.util.HighlightUtil
 import com.folioreader.util.UiUtil
 import dalvik.system.PathClassLoader
-import kotlinx.android.synthetic.main.text_selection.view.*
 import org.json.JSONObject
 import org.springframework.util.ReflectionUtils
 import java.lang.ref.WeakReference
+import java.util.*
 
-/**
- * @author by mahavir on 3/31/16.
- */
 class FolioWebView : WebView {
 
     companion object {
-
+        @JvmField
         val LOG_TAG: String = FolioWebView::class.java.simpleName
         private const val IS_SCROLLING_CHECK_TIMER = 100
         private const val IS_SCROLLING_CHECK_MAX_DURATION = 10000
 
         @JvmStatic
-        fun onWebViewConsoleMessage(cm: ConsoleMessage, LOG_TAG: String, msg: String): Boolean {
+        fun onWebViewConsoleMessage(cm: ConsoleMessage, logTag: String, msg: String): Boolean {
             when (cm.messageLevel()) {
                 ConsoleMessage.MessageLevel.LOG -> {
-                    Log.v(LOG_TAG, msg)
+                    Log.v(logTag, msg)
                     return true
                 }
                 ConsoleMessage.MessageLevel.DEBUG, ConsoleMessage.MessageLevel.TIP -> {
-                    Log.d(LOG_TAG, msg)
+                    Log.d(logTag, msg)
                     return true
                 }
                 ConsoleMessage.MessageLevel.WARNING -> {
-                    Log.w(LOG_TAG, msg)
+                    Log.w(logTag, msg)
                     return true
                 }
                 ConsoleMessage.MessageLevel.ERROR -> {
-                    Log.e(LOG_TAG, msg)
+                    Log.e(logTag, msg)
                     return true
                 }
                 else -> return false
@@ -79,13 +77,13 @@ class FolioWebView : WebView {
 
     private var horizontalPageCount = 0
     private var displayMetrics: DisplayMetrics? = null
-    private var density: Float = 0.toFloat()
+    private var density: Float = 0f
     private var mScrollListener: ScrollListener? = null
     private var mSeekBarListener: SeekBarListener? = null
     private lateinit var gestureDetector: GestureDetectorCompat
     private var eventActionDown: MotionEvent? = null
     private var pageWidthCssDp: Int = 0
-    private var pageWidthCssPixels: Float = 0.toFloat()
+    private var pageWidthCssPixels: Float = 0f
     private lateinit var webViewPager: WebViewPager
     private lateinit var uiHandler: Handler
     private lateinit var folioActivityCallback: FolioActivityCallback
@@ -97,7 +95,9 @@ class FolioWebView : WebView {
     private var selectionRect = Rect()
     private val popupRect = Rect()
     private var popupWindow = PopupWindow()
-    private lateinit var viewTextSelection: View
+    private var _textSelectionBinding: TextSelectionBinding? = null
+    private val textSelectionBinding get() = _textSelectionBinding!!
+
     private var isScrollingCheckDuration: Int = 0
     private var isScrollingRunnable: Runnable? = null
     private var oldScrollX: Int = 0
@@ -116,6 +116,15 @@ class FolioWebView : WebView {
 
     private enum class LastScrollType {
         USER, PROGRAMMATIC
+    }
+
+    // Listener interfaces
+    internal interface ScrollListener {
+        fun onScrollChange(percent: Int)
+    }
+
+    internal interface SeekBarListener {
+        fun fadeInSeekBarIfInvisible()
     }
 
     @JavascriptInterface
@@ -155,71 +164,35 @@ class FolioWebView : WebView {
     }
 
     private inner class HorizontalGestureListener : GestureDetector.SimpleOnGestureListener() {
-
-        override fun onScroll(e1: MotionEvent?, e2: MotionEvent?, distanceX: Float, distanceY: Float): Boolean {
-            //Log.d(LOG_TAG, "-> onScroll -> e1 = " + e1 + ", e2 = " + e2 + ", distanceX = " + distanceX + ", distanceY = " + distanceY);
+        override fun onScroll(e1: MotionEvent, e2: MotionEvent, distanceX: Float, distanceY: Float): Boolean {
             lastScrollType = LastScrollType.USER
             return false
         }
 
-        override fun onFling(e1: MotionEvent?, e2: MotionEvent?, velocityX: Float, velocityY: Float): Boolean {
-            //Log.d(LOG_TAG, "-> onFling -> e1 = " + e1 + ", e2 = " + e2 + ", velocityX = " + velocityX + ", velocityY = " + velocityY);
-
+        override fun onFling(e1: MotionEvent, e2: MotionEvent, velocityX: Float, velocityY: Float): Boolean {
             if (!webViewPager.isScrolling) {
-                // Need to complete the scroll as ViewPager thinks these touch events should not
-                // scroll it's pages.
-                //Log.d(LOG_TAG, "-> onFling -> completing scroll");
                 uiHandler.postDelayed({
-                    // Delayed to avoid inconsistency of scrolling in WebView
-                    scrollTo(getScrollXPixelsForPage(webViewPager!!.currentItem), 0)
+                    scrollTo(getScrollXPixelsForPage(webViewPager.currentItem), 0)
                 }, 100)
             }
-
             lastScrollType = LastScrollType.USER
             return true
         }
 
-        override fun onDown(event: MotionEvent?): Boolean {
-            //Log.v(LOG_TAG, "-> onDown -> " + event.toString());
-
+        override fun onDown(event: MotionEvent): Boolean {
             eventActionDown = MotionEvent.obtain(event)
-            super@FolioWebView.onTouchEvent(event)
+            super@FolioWebView.onTouchEvent(event) // Call super.onTouchEvent for proper handling
             return true
         }
-    }
-
-    @JavascriptInterface
-    fun dismissPopupWindow(): Boolean {
-        Log.d(LOG_TAG, "-> dismissPopupWindow -> " + parentFragment.spineItem?.href)
-        val wasShowing = popupWindow.isShowing
-        if (Looper.getMainLooper().thread == Thread.currentThread()) {
-            popupWindow.dismiss()
-        } else {
-            uiHandler.post { popupWindow.dismiss() }
-        }
-        selectionRect = Rect()
-        uiHandler.removeCallbacks(isScrollingRunnable)
-        isScrollingCheckDuration = 0
-        return wasShowing
-    }
-
-    override fun destroy() {
-        super.destroy()
-        Log.d(LOG_TAG, "-> destroy")
-        dismissPopupWindow()
-        destroyed = true
     }
 
     private inner class VerticalGestureListener : GestureDetector.SimpleOnGestureListener() {
-
-        override fun onScroll(e1: MotionEvent?, e2: MotionEvent?, distanceX: Float, distanceY: Float): Boolean {
-            //Log.v(LOG_TAG, "-> onScroll -> e1 = " + e1 + ", e2 = " + e2 + ", distanceX = " + distanceX + ", distanceY = " + distanceY);
+        override fun onScroll(e1: MotionEvent, e2: MotionEvent, distanceX: Float, distanceY: Float): Boolean {
             lastScrollType = LastScrollType.USER
             return false
         }
 
-        override fun onFling(e1: MotionEvent?, e2: MotionEvent?, velocityX: Float, velocityY: Float): Boolean {
-            //Log.v(LOG_TAG, "-> onFling -> e1 = " + e1 + ", e2 = " + e2 + ", velocityX = " + velocityX + ", velocityY = " + velocityY);
+        override fun onFling(e1: MotionEvent, e2: MotionEvent, velocityX: Float, velocityY: Float): Boolean {
             lastScrollType = LastScrollType.USER
             return false
         }
@@ -231,8 +204,7 @@ class FolioWebView : WebView {
 
     private fun init() {
         Log.v(LOG_TAG, "-> init")
-
-        uiHandler = Handler()
+        uiHandler = Handler(Looper.getMainLooper())
         displayMetrics = resources.displayMetrics
         density = displayMetrics!!.density
 
@@ -241,18 +213,31 @@ class FolioWebView : WebView {
         } else {
             GestureDetectorCompat(context, VerticalGestureListener())
         }
-
         initViewTextSelection()
     }
 
     fun initViewTextSelection() {
         Log.v(LOG_TAG, "-> initViewTextSelection")
 
-        val textSelectionMiddleDrawable = ContextCompat.getDrawable(
-            context,
-            R.drawable.abc_text_select_handle_middle_mtrl_dark
-        )
+        var textSelectionMiddleDrawable: Drawable? = null
+        try {
+            val typedArray = context.theme.obtainStyledAttributes(intArrayOf(android.R.attr.textSelectHandle))
+            val textSelectHandleResId = typedArray.getResourceId(0, 0)
+            typedArray.recycle()
+
+            if (textSelectHandleResId != 0) {
+                textSelectionMiddleDrawable = ContextCompat.getDrawable(context, textSelectHandleResId)
+            } else {
+                Log.w(LOG_TAG, "textSelectHandle attribute not found in theme or returned 0.")
+            }
+        } catch (e: Exception) {
+            Log.e(LOG_TAG, "Error getting textSelectHandle drawable from theme attribute.", e)
+        }
+        
         handleHeight = textSelectionMiddleDrawable?.intrinsicHeight ?: (24 * density).toInt()
+        if (textSelectionMiddleDrawable == null) {
+            Log.w(LOG_TAG, "Text selection handle drawable could not be loaded, using default height.")
+        }
 
         val config = AppUtil.getSavedConfig(context)!!
         val ctw = if (config.isNightMode) {
@@ -261,73 +246,45 @@ class FolioWebView : WebView {
             ContextThemeWrapper(context, R.style.FolioDayTheme)
         }
 
-        viewTextSelection = LayoutInflater.from(ctw).inflate(R.layout.text_selection, null)
-        viewTextSelection.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED)
+        _textSelectionBinding = TextSelectionBinding.inflate(LayoutInflater.from(ctw), this, false)
+        textSelectionBinding.root.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED)
 
-        viewTextSelection.yellowHighlight.setOnClickListener {
-            Log.v(LOG_TAG, "-> onClick -> yellowHighlight")
-            onHighlightColorItemsClicked(HighlightStyle.Yellow, false)
-        }
-        viewTextSelection.greenHighlight.setOnClickListener {
-            Log.v(LOG_TAG, "-> onClick -> greenHighlight")
-            onHighlightColorItemsClicked(HighlightStyle.Green, false)
-        }
-        viewTextSelection.blueHighlight.setOnClickListener {
-            Log.v(LOG_TAG, "-> onClick -> blueHighlight")
-            onHighlightColorItemsClicked(HighlightStyle.Blue, false)
-        }
-        viewTextSelection.pinkHighlight.setOnClickListener {
-            Log.v(LOG_TAG, "-> onClick -> pinkHighlight")
-            onHighlightColorItemsClicked(HighlightStyle.Pink, false)
-        }
-        viewTextSelection.underlineHighlight.setOnClickListener {
-            Log.v(LOG_TAG, "-> onClick -> underlineHighlight")
-            onHighlightColorItemsClicked(HighlightStyle.Underline, false)
-        }
+        textSelectionBinding.yellowHighlight.setOnClickListener { onHighlightColorItemsClicked(HighlightStyle.Yellow, false) }
+        textSelectionBinding.greenHighlight.setOnClickListener { onHighlightColorItemsClicked(HighlightStyle.Green, false) }
+        textSelectionBinding.blueHighlight.setOnClickListener { onHighlightColorItemsClicked(HighlightStyle.Blue, false) }
+        textSelectionBinding.pinkHighlight.setOnClickListener { onHighlightColorItemsClicked(HighlightStyle.Pink, false) }
+        textSelectionBinding.underlineHighlight.setOnClickListener { onHighlightColorItemsClicked(HighlightStyle.Underline, false) }
 
-        viewTextSelection.deleteHighlight.setOnClickListener {
-            Log.v(LOG_TAG, "-> onClick -> deleteHighlight")
+        textSelectionBinding.deleteHighlight.setOnClickListener {
             dismissPopupWindow()
             loadUrl("javascript:clearSelection()")
             loadUrl("javascript:deleteThisHighlight()")
         }
 
-        viewTextSelection.copySelection.setOnClickListener {
+        textSelectionBinding.copySelection.setOnClickListener {
             dismissPopupWindow()
-            loadUrl("javascript:onTextSelectionItemClicked(${it.id})")
+            loadUrl("javascript:onTextSelectionItemClicked('''${R.id.copySelection}''')")
         }
-        viewTextSelection.shareSelection.setOnClickListener {
+        textSelectionBinding.shareSelection.setOnClickListener {
             dismissPopupWindow()
-            loadUrl("javascript:onTextSelectionItemClicked(${it.id})")
+            loadUrl("javascript:onTextSelectionItemClicked('''${R.id.shareSelection}''')")
         }
-        viewTextSelection.defineSelection.setOnClickListener {
+        textSelectionBinding.defineSelection.setOnClickListener {
             dismissPopupWindow()
-            loadUrl("javascript:onTextSelectionItemClicked(${it.id})")
+            loadUrl("javascript:onTextSelectionItemClicked('''${R.id.defineSelection}''')")
         }
     }
 
     @JavascriptInterface
     fun onTextSelectionItemClicked(id: Int, selectedText: String?) {
-
         uiHandler.post { loadUrl("javascript:clearSelection()") }
-
         when (id) {
             R.id.copySelection -> {
-                Log.v(LOG_TAG, "-> onTextSelectionItemClicked -> copySelection -> $selectedText")
                 UiUtil.copyToClipboard(context, selectedText)
                 Toast.makeText(context, context.getString(R.string.copied), Toast.LENGTH_SHORT).show()
             }
-            R.id.shareSelection -> {
-                Log.v(LOG_TAG, "-> onTextSelectionItemClicked -> shareSelection -> $selectedText")
-                UiUtil.share(context, selectedText)
-            }
-            R.id.defineSelection -> {
-                Log.v(LOG_TAG, "-> onTextSelectionItemClicked -> defineSelection -> $selectedText")
-                uiHandler.post { showDictDialog(selectedText) }
-            }
-            else -> {
-                Log.w(LOG_TAG, "-> onTextSelectionItemClicked -> unknown id = $id")
-            }
+            R.id.shareSelection -> UiUtil.share(context, selectedText)
+            R.id.defineSelection -> uiHandler.post { showDictDialog(selectedText) }
         }
     }
 
@@ -336,7 +293,10 @@ class FolioWebView : WebView {
         val bundle = Bundle()
         bundle.putString(Constants.SELECTED_WORD, selectedText?.trim())
         dictionaryFragment.arguments = bundle
-        dictionaryFragment.show(parentFragment.fragmentManager!!, DictionaryFragment::class.java.name)
+        // Ensure parentFragment.parentFragmentManager is used for DialogFragments
+        if (parentFragment.isAdded) {
+             dictionaryFragment.show(parentFragment.parentFragmentManager, DictionaryFragment::class.java.name)
+        }
     }
 
     private fun onHighlightColorItemsClicked(style: HighlightStyle, isAlreadyCreated: Boolean) {
@@ -346,11 +306,7 @@ class FolioWebView : WebView {
 
     @JavascriptInterface
     fun deleteThisHighlight(id: String?) {
-        Log.d(LOG_TAG, "-> deleteThisHighlight")
-
-        if (id.isNullOrEmpty())
-            return
-
+        if (id.isNullOrEmpty()) return
         val highlightImpl = HighLightTable.getHighlightForRangy(id)
         if (HighLightTable.deleteHighlight(id)) {
             val rangy = HighlightUtil.generateRangyString(parentFragment.pageName)
@@ -375,27 +331,23 @@ class FolioWebView : WebView {
 
     override fun onLayout(changed: Boolean, l: Int, t: Int, r: Int, b: Int) {
         super.onLayout(changed, l, t, r, b)
-
-        pageWidthCssDp = Math.ceil((measuredWidth / density).toDouble()).toInt()
-        pageWidthCssPixels = pageWidthCssDp * density
+        if (changed) {
+            pageWidthCssDp = Math.ceil((measuredWidth / density).toDouble()).toInt()
+            pageWidthCssPixels = pageWidthCssDp * density
+        }
     }
 
-    fun setScrollListener(listener: ScrollListener) {
+    internal fun setScrollListener(listener: ScrollListener) { // Changed to internal
         mScrollListener = listener
     }
 
-    fun setSeekBarListener(listener: SeekBarListener) {
+    internal fun setSeekBarListener(listener: SeekBarListener) { // Changed to internal
         mSeekBarListener = listener
     }
 
-    override fun onTouchEvent(event: MotionEvent?): Boolean {
-        //Log.v(LOG_TAG, "-> onTouchEvent -> " + AppUtil.actionToString(event.getAction()));
-
-        if (event == null)
-            return false
-
+    override fun onTouchEvent(event: MotionEvent): Boolean {
+        //if (event == null) return false // Should not happen with non-null type, but good practice
         lastTouchAction = event.action
-
         return if (folioActivityCallback.direction == Config.Direction.HORIZONTAL) {
             computeHorizontalScroll(event)
         } else {
@@ -404,400 +356,217 @@ class FolioWebView : WebView {
     }
 
     private fun computeVerticalScroll(event: MotionEvent): Boolean {
-
         gestureDetector.onTouchEvent(event)
         return super.onTouchEvent(event)
     }
 
     private fun computeHorizontalScroll(event: MotionEvent): Boolean {
-        //Log.v(LOG_TAG, "-> computeHorizontalScroll");
-
-        // Rare condition in fast scrolling
-        if (!::webViewPager.isInitialized)
-            return super.onTouchEvent(event)
-
-        webViewPager.dispatchTouchEvent(event)
+        if (!::webViewPager.isInitialized) return super.onTouchEvent(event)
+        webViewPager.dispatchTouchEvent(event) // Pass touch events to ViewPager
         val gestureReturn = gestureDetector.onTouchEvent(event)
         return if (gestureReturn) true else super.onTouchEvent(event)
     }
 
     fun getScrollXDpForPage(page: Int): Int {
-        //Log.v(LOG_TAG, "-> getScrollXDpForPage -> page = " + page);
         return page * pageWidthCssDp
     }
 
     fun getScrollXPixelsForPage(page: Int): Int {
-        //Log.v(LOG_TAG, "-> getScrollXPixelsForPage -> page = " + page);
         return Math.ceil((page * pageWidthCssPixels).toDouble()).toInt()
     }
 
     fun setHorizontalPageCount(horizontalPageCount: Int) {
         this.horizontalPageCount = horizontalPageCount
-
         uiHandler.post {
-            webViewPager = (parent as View).findViewById(R.id.webViewPager)
-            webViewPager.setHorizontalPageCount(this@FolioWebView.horizontalPageCount)
+            // Ensure parent is a View before casting and finding webViewPager
+            val parentView = parent as? View
+            parentView?.let {
+                webViewPager = it.findViewById(R.id.webViewPager)
+                webViewPager.setHorizontalPageCount(this@FolioWebView.horizontalPageCount)
+            }
         }
     }
 
     override fun scrollTo(x: Int, y: Int) {
         super.scrollTo(x, y)
-        //Log.d(LOG_TAG, "-> scrollTo -> x = " + x);
         lastScrollType = LastScrollType.PROGRAMMATIC
     }
 
     override fun onScrollChanged(l: Int, t: Int, oldl: Int, oldt: Int) {
-        if (mScrollListener != null) mScrollListener!!.onScrollChange(t)
+        mScrollListener?.onScrollChange(t)
         super.onScrollChanged(l, t, oldl, oldt)
-
         if (lastScrollType == LastScrollType.USER) {
-            //Log.d(LOG_TAG, "-> onScrollChanged -> scroll initiated by user");
             parentFragment.searchLocatorVisible = null
         }
-
         lastScrollType = null
     }
 
-    interface ScrollListener {
-        fun onScrollChange(percent: Int)
+    @JavascriptInterface
+    fun dismissPopupWindow(): Boolean {
+        val wasShowing = popupWindow.isShowing
+        if (Looper.getMainLooper().thread == Thread.currentThread()) {
+            popupWindow.dismiss()
+        } else {
+            uiHandler.post { popupWindow.dismiss() }
+        }
+        selectionRect = Rect()
+        isScrollingRunnable?.let { uiHandler.removeCallbacks(it) }
+        isScrollingCheckDuration = 0
+        return wasShowing
     }
 
-    interface SeekBarListener {
-        fun fadeInSeekBarIfInvisible()
+    override fun destroy() {
+        super.destroy()
+        Log.d(LOG_TAG, "-> destroy")
+        dismissPopupWindow()
+        destroyed = true
+        _textSelectionBinding = null
     }
 
     private inner class TextSelectionCb : ActionMode.Callback {
-
-        override fun onCreateActionMode(mode: ActionMode, menu: Menu): Boolean {
-            Log.d(LOG_TAG, "-> onCreateActionMode")
-            return true
-        }
-
+        override fun onCreateActionMode(mode: ActionMode, menu: Menu): Boolean = true
         override fun onPrepareActionMode(mode: ActionMode, menu: Menu): Boolean {
-            Log.d(LOG_TAG, "-> onPrepareActionMode")
-
             evaluateJavascript("javascript:getSelectionRect()") { value ->
-                val rectJson = JSONObject(value)
-                setSelectionRect(
-                    rectJson.getInt("left"), rectJson.getInt("top"),
-                    rectJson.getInt("right"), rectJson.getInt("bottom")
-                )
+                if (value != null && value != "null") {
+                    try {
+                        val rectJson = JSONObject(value)
+                        setSelectionRect(
+                            rectJson.getInt("left"), rectJson.getInt("top"),
+                            rectJson.getInt("right"), rectJson.getInt("bottom")
+                        )
+                    } catch (e: Exception) {
+                        Log.e(LOG_TAG, "Error parsing selection rect JSON", e)
+                    }
+                }
             }
             return false
         }
-
-        override fun onActionItemClicked(mode: ActionMode, item: MenuItem): Boolean {
-            Log.d(LOG_TAG, "-> onActionItemClicked")
-            return false
-        }
-
+        override fun onActionItemClicked(mode: ActionMode, item: MenuItem): Boolean = false
         override fun onDestroyActionMode(mode: ActionMode) {
-            Log.d(LOG_TAG, "-> onDestroyActionMode")
             dismissPopupWindow()
         }
     }
 
     @RequiresApi(api = Build.VERSION_CODES.M)
     private inner class TextSelectionCb2 : ActionMode.Callback2() {
-
         override fun onCreateActionMode(mode: ActionMode, menu: Menu): Boolean {
-            Log.d(LOG_TAG, "-> onCreateActionMode")
             menu.clear()
             return true
         }
-
-        override fun onPrepareActionMode(mode: ActionMode, menu: Menu): Boolean {
-            Log.d(LOG_TAG, "-> onPrepareActionMode")
-            return false
-        }
-
-        override fun onActionItemClicked(mode: ActionMode, item: MenuItem): Boolean {
-            Log.d(LOG_TAG, "-> onActionItemClicked")
-            return false
-        }
-
+        override fun onPrepareActionMode(mode: ActionMode, menu: Menu): Boolean = false
+        override fun onActionItemClicked(mode: ActionMode, item: MenuItem): Boolean = false
         override fun onDestroyActionMode(mode: ActionMode) {
-            Log.d(LOG_TAG, "-> onDestroyActionMode")
             dismissPopupWindow()
         }
-
         override fun onGetContentRect(mode: ActionMode, view: View, outRect: Rect) {
-            Log.d(LOG_TAG, "-> onGetContentRect")
-
             evaluateJavascript("javascript:getSelectionRect()") { value ->
-                val rectJson = JSONObject(value)
-                setSelectionRect(
-                    rectJson.getInt("left"), rectJson.getInt("top"),
-                    rectJson.getInt("right"), rectJson.getInt("bottom")
-                )
+                 if (value != null && value != "null") {
+                    try {
+                        val rectJson = JSONObject(value)
+                        setSelectionRect(
+                            rectJson.getInt("left"), rectJson.getInt("top"),
+                            rectJson.getInt("right"), rectJson.getInt("bottom")
+                        )
+                    } catch (e: Exception) {
+                        Log.e(LOG_TAG, "Error parsing selection rect JSON onGetContentRect", e)
+                    }
+                 }
             }
         }
     }
 
     override fun startActionMode(callback: Callback): ActionMode {
-        Log.d(LOG_TAG, "-> startActionMode")
-
         textSelectionCb = TextSelectionCb()
         actionMode = super.startActionMode(textSelectionCb)
-        actionMode?.finish()
-
-        /*try {
-            applyThemeColorToHandles()
-        } catch (e: Exception) {
-            Log.w(LOG_TAG, "-> startActionMode -> Failed to apply theme colors to selection " +
-                    "handles", e)
-        }*/
-
-        return actionMode as ActionMode
-
-        //Comment above code and uncomment below line for stock text selection
-        //return super.startActionMode(callback)
+        actionMode?.finish() // Finish immediately to prevent system controls, rely on custom popup
+        return actionMode!! // Must return a non-null ActionMode
     }
 
     @RequiresApi(api = Build.VERSION_CODES.M)
     override fun startActionMode(callback: Callback, type: Int): ActionMode {
-        Log.d(LOG_TAG, "-> startActionMode")
-
         textSelectionCb2 = TextSelectionCb2()
         actionMode = super.startActionMode(textSelectionCb2, type)
-        actionMode?.finish()
-
-        /*try {
-            applyThemeColorToHandles()
-        } catch (e: Exception) {
-            Log.w(LOG_TAG, "-> startActionMode -> Failed to apply theme colors to selection " +
-                    "handles", e)
-        }*/
-
-        return actionMode as ActionMode
-
-        //Comment above code and uncomment below line for stock text selection
-        //return super.startActionMode(callback, type)
-    }
-
-    private fun applyThemeColorToHandles() {
-        Log.v(LOG_TAG, "-> applyThemeColorToHandles")
-
-        if (Build.VERSION.SDK_INT < 23) {
-            val folioActivityRef: WeakReference<FolioActivity> = folioActivityCallback.activity
-            val mWindowManagerField = ReflectionUtils.findField(FolioActivity::class.java, "mWindowManager")
-            mWindowManagerField.isAccessible = true
-            val mWindowManager = mWindowManagerField.get(folioActivityRef.get())
-
-            val windowManagerImplClass = Class.forName("android.view.WindowManagerImpl")
-            val mGlobalField = ReflectionUtils.findField(windowManagerImplClass, "mGlobal")
-            mGlobalField.isAccessible = true
-            val mGlobal = mGlobalField.get(mWindowManager)
-
-            val windowManagerGlobalClass = Class.forName("android.view.WindowManagerGlobal")
-            val mViewsField = ReflectionUtils.findField(windowManagerGlobalClass, "mViews")
-            mViewsField.isAccessible = true
-            val mViews = mViewsField.get(mGlobal) as ArrayList<View>
-            val config = AppUtil.getSavedConfig(context)!!
-
-            for (view in mViews) {
-                val handleViewClass = Class.forName("com.android.org.chromium.content.browser.input.HandleView")
-
-                if (handleViewClass.isInstance(view)) {
-                    val mDrawableField = ReflectionUtils.findField(handleViewClass, "mDrawable")
-                    mDrawableField.isAccessible = true
-                    val mDrawable = mDrawableField.get(view) as BitmapDrawable
-                    UiUtil.setColorIntToDrawable(config.themeColor, mDrawable)
-                }
-            }
-
-        } else {
-            val folioActivityRef: WeakReference<FolioActivity> = folioActivityCallback.activity
-            val mWindowManagerField = ReflectionUtils.findField(FolioActivity::class.java, "mWindowManager")
-            mWindowManagerField.isAccessible = true
-            val mWindowManager = mWindowManagerField.get(folioActivityRef.get())
-
-            val windowManagerImplClass = Class.forName("android.view.WindowManagerImpl")
-            val mGlobalField = ReflectionUtils.findField(windowManagerImplClass, "mGlobal")
-            mGlobalField.isAccessible = true
-            val mGlobal = mGlobalField.get(mWindowManager)
-
-            val windowManagerGlobalClass = Class.forName("android.view.WindowManagerGlobal")
-            val mViewsField = ReflectionUtils.findField(windowManagerGlobalClass, "mViews")
-            mViewsField.isAccessible = true
-            val mViews = mViewsField.get(mGlobal) as ArrayList<View>
-            val config = AppUtil.getSavedConfig(context)!!
-
-            for (view in mViews) {
-                val popupDecorViewClass = Class.forName("android.widget.PopupWindow\$PopupDecorView")
-
-                if (!popupDecorViewClass.isInstance(view))
-                    continue
-
-                val mChildrenField = ReflectionUtils.findField(popupDecorViewClass, "mChildren")
-                mChildrenField.isAccessible = true
-                val mChildren = mChildrenField.get(view) as kotlin.Array<View>
-
-                //val pathClassLoader = PathClassLoader("/system/app/Chrome/Chrome.apk", ClassLoader.getSystemClassLoader())
-
-                val pathClassLoader =
-                    PathClassLoader("/system/app/Chrome/Chrome.apk", folioActivityRef.get()?.classLoader)
-
-                val popupTouchHandleDrawableClass = Class.forName(
-                    "org.chromium.android_webview.PopupTouchHandleDrawable",
-                    true, pathClassLoader
-                )
-
-                //if (!popupTouchHandleDrawableClass.isInstance(mChildren[0]))
-                //    continue
-
-                val mDrawableField = ReflectionUtils.findField(popupTouchHandleDrawableClass, "mDrawable")
-                mDrawableField.isAccessible = true
-                val mDrawable = mDrawableField.get(mChildren[0]) as Drawable
-                UiUtil.setColorIntToDrawable(config.themeColor, mDrawable)
-            }
-        }
+        actionMode?.finish() // Finish immediately
+        return actionMode!! // Must return a non-null ActionMode
     }
 
     @JavascriptInterface
     fun setSelectionRect(left: Int, top: Int, right: Int, bottom: Int) {
-
         val currentSelectionRect = Rect()
         currentSelectionRect.left = (left * density).toInt()
         currentSelectionRect.top = (top * density).toInt()
         currentSelectionRect.right = (right * density).toInt()
         currentSelectionRect.bottom = (bottom * density).toInt()
-        Log.d(LOG_TAG, "-> setSelectionRect -> $currentSelectionRect")
 
         computeTextSelectionRect(currentSelectionRect)
         uiHandler.post { showTextSelectionPopup() }
     }
 
     private fun computeTextSelectionRect(currentSelectionRect: Rect) {
-        Log.v(LOG_TAG, "-> computeTextSelectionRect")
-
         val viewportRect = folioActivityCallback.getViewportRect(DisplayUnit.PX)
-        Log.d(LOG_TAG, "-> viewportRect -> $viewportRect")
-
         if (!Rect.intersects(viewportRect, currentSelectionRect)) {
-            Log.i(LOG_TAG, "-> currentSelectionRect doesn't intersects viewportRect")
             uiHandler.post {
                 popupWindow.dismiss()
-                uiHandler.removeCallbacks(isScrollingRunnable)
+                isScrollingRunnable?.let { uiHandler.removeCallbacks(it) }
             }
             return
         }
-        Log.i(LOG_TAG, "-> currentSelectionRect intersects viewportRect")
 
-        if (selectionRect == currentSelectionRect) {
-            Log.i(
-                LOG_TAG, "-> setSelectionRect -> currentSelectionRect is equal to previous " +
-                        "selectionRect so no need to computeTextSelectionRect and show popupWindow again"
-            )
-            return
-        }
-
-        Log.i(
-            LOG_TAG, "-> setSelectionRect -> currentSelectionRect is not equal to previous " +
-                    "selectionRect so computeTextSelectionRect and show popupWindow"
-        )
+        if (selectionRect == currentSelectionRect) return
         selectionRect = currentSelectionRect
 
-        val aboveSelectionRect = Rect(viewportRect)
-        aboveSelectionRect.bottom = selectionRect.top - (8 * density).toInt()
-        val belowSelectionRect = Rect(viewportRect)
-        belowSelectionRect.top = selectionRect.bottom + handleHeight
+        val aboveSelectionRect = Rect(viewportRect).apply { bottom = selectionRect.top - (8 * density).toInt() }
+        val belowSelectionRect = Rect(viewportRect).apply { top = selectionRect.bottom + handleHeight }
 
-        //Log.d(LOG_TAG, "-> aboveSelectionRect -> " + aboveSelectionRect);
-        //Log.d(LOG_TAG, "-> belowSelectionRect -> " + belowSelectionRect);
-
-        // Priority to show popupWindow will be as following -
-        // 1. Show popupWindow below selectionRect, if space available
-        // 2. Show popupWindow above selectionRect, if space available
-        // 3. Show popupWindow in the middle of selectionRect
-
-        //popupRect initialisation for belowSelectionRect
         popupRect.left = viewportRect.left
-        popupRect.top = belowSelectionRect.top
-        popupRect.right = popupRect.left + viewTextSelection.measuredWidth
-        popupRect.bottom = popupRect.top + viewTextSelection.measuredHeight
-        //Log.d(LOG_TAG, "-> Pre decision popupRect -> " + popupRect);
-
-        val popupY: Int
-        if (belowSelectionRect.contains(popupRect)) {
-            Log.i(LOG_TAG, "-> show below")
-            popupY = belowSelectionRect.top
-
+        popupRect.right = popupRect.left + textSelectionBinding.root.measuredWidth
+        val popupY: Int = if (belowSelectionRect.contains(popupRect.apply { top = belowSelectionRect.top; bottom = top + textSelectionBinding.root.measuredHeight })) {
+            belowSelectionRect.top
+        } else if (aboveSelectionRect.contains(popupRect.apply { top = aboveSelectionRect.top; bottom = top + textSelectionBinding.root.measuredHeight })) {
+            aboveSelectionRect.bottom - popupRect.height()
         } else {
-
-            // popupRect initialisation for aboveSelectionRect
-            popupRect.top = aboveSelectionRect.top
-            popupRect.bottom = popupRect.top + viewTextSelection.measuredHeight
-
-            if (aboveSelectionRect.contains(popupRect)) {
-                Log.i(LOG_TAG, "-> show above")
-                popupY = aboveSelectionRect.bottom - popupRect.height()
-
-            } else {
-
-                Log.i(LOG_TAG, "-> show in middle")
-                val popupYDiff = (viewTextSelection.measuredHeight - selectionRect.height()) / 2
-                popupY = selectionRect.top - popupYDiff
-            }
+            selectionRect.top - (textSelectionBinding.root.measuredHeight - selectionRect.height()) / 2
         }
 
-        val popupXDiff = (viewTextSelection.measuredWidth - selectionRect.width()) / 2
-        val popupX = selectionRect.left - popupXDiff
-
+        val popupX = selectionRect.left - (textSelectionBinding.root.measuredWidth - selectionRect.width()) / 2
         popupRect.offsetTo(popupX, popupY)
-        //Log.d(LOG_TAG, "-> Post decision popupRect -> " + popupRect);
 
-        // Check if popupRect left side is going outside of the viewportRect
-        if (popupRect.left < viewportRect.left) {
-            popupRect.right += 0 - popupRect.left
-            popupRect.left = 0
-        }
-
-        // Check if popupRect right side is going outside of the viewportRect
-        if (popupRect.right > viewportRect.right) {
-            val dx = popupRect.right - viewportRect.right
-            popupRect.left -= dx
-            popupRect.right -= dx
-        }
+        if (popupRect.left < viewportRect.left) popupRect.offset(viewportRect.left - popupRect.left, 0)
+        if (popupRect.right > viewportRect.right) popupRect.offset(viewportRect.right - popupRect.right, 0)
     }
 
     private fun showTextSelectionPopup() {
-        Log.v(LOG_TAG, "-> showTextSelectionPopup")
-        Log.d(LOG_TAG, "-> showTextSelectionPopup -> To be laid out popupRect -> $popupRect")
+        if (_textSelectionBinding == null) return // Guard against null binding
 
         popupWindow.dismiss()
         oldScrollX = scrollX
         oldScrollY = scrollY
 
         isScrollingRunnable = Runnable {
-            uiHandler.removeCallbacks(isScrollingRunnable)
+            isScrollingRunnable?.let { uiHandler.removeCallbacks(it) }
             val currentScrollX = scrollX
             val currentScrollY = scrollY
-            val inTouchMode = lastTouchAction == MotionEvent.ACTION_DOWN ||
-                    lastTouchAction == MotionEvent.ACTION_MOVE
+            val inTouchMode = lastTouchAction == MotionEvent.ACTION_DOWN || lastTouchAction == MotionEvent.ACTION_MOVE
 
             if (oldScrollX == currentScrollX && oldScrollY == currentScrollY && !inTouchMode) {
-                Log.i(LOG_TAG, "-> Stopped scrolling, show Popup")
-                popupWindow.dismiss()
-                popupWindow = PopupWindow(viewTextSelection, WRAP_CONTENT, WRAP_CONTENT)
-                popupWindow.isClippingEnabled = false
-                popupWindow.showAtLocation(
-                    this@FolioWebView, Gravity.NO_GRAVITY,
-                    popupRect.left, popupRect.top
-                )
+                if (!destroyed && _textSelectionBinding != null) { // Check binding again before use
+                    popupWindow = PopupWindow(textSelectionBinding.root, WRAP_CONTENT, WRAP_CONTENT)
+                    popupWindow.isClippingEnabled = false
+                    popupWindow.showAtLocation(this@FolioWebView, Gravity.NO_GRAVITY, popupRect.left, popupRect.top)
+                }
             } else {
-                Log.i(LOG_TAG, "-> Still scrolling, don't show Popup")
                 oldScrollX = currentScrollX
                 oldScrollY = currentScrollY
                 isScrollingCheckDuration += IS_SCROLLING_CHECK_TIMER
-                if (isScrollingCheckDuration < IS_SCROLLING_CHECK_MAX_DURATION && !destroyed)
-                    uiHandler.postDelayed(isScrollingRunnable, IS_SCROLLING_CHECK_TIMER.toLong())
+                if (isScrollingCheckDuration < IS_SCROLLING_CHECK_MAX_DURATION && !destroyed) {
+                    isScrollingRunnable?.let { uiHandler.postDelayed(it, IS_SCROLLING_CHECK_TIMER.toLong()) }
+                }
             }
         }
-
-        uiHandler.removeCallbacks(isScrollingRunnable)
+        isScrollingRunnable?.let { uiHandler.removeCallbacks(it) }
         isScrollingCheckDuration = 0
-        if (!destroyed)
-            uiHandler.postDelayed(isScrollingRunnable, IS_SCROLLING_CHECK_TIMER.toLong())
+        if (!destroyed) {
+            isScrollingRunnable?.let { uiHandler.postDelayed(it, IS_SCROLLING_CHECK_TIMER.toLong()) }
+        }
     }
 }

@@ -1,11 +1,13 @@
 apply plugin: 'com.android.application'
 apply plugin: 'checkstyle'
 apply plugin: 'kotlin-android'
-apply plugin: 'kotlin-android-extensions'
+// REMOVED: apply plugin: 'kotlin-android-extensions'
+apply plugin: 'kotlin-parcelize' // ADDED for @Parcelize support
 
 android {
+    namespace "com.folioreader.android.sample" // ADDED namespace
 
-    compileSdkVersion versions.androidCompileSdk
+    compileSdkVersion 33
 
     defaultConfig {
         applicationId "com.folioreader.android.sample"
@@ -24,8 +26,13 @@ android {
         }
     }
 
-    dexOptions {
-        javaMaxHeapSize "4G"
+    // ADDED View Binding
+    buildFeatures {
+        viewBinding true
+    }
+
+    kotlinOptions { // ADDED this block
+        jvmTarget = '1.8'
     }
 
     packagingOptions {
@@ -71,5 +78,4 @@ dependencies {
     //    }
     //
     // }
-
 }
