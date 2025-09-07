@@ -12,14 +12,19 @@ import org.json.JSONObject
 class SearchLocator : Parcelable {
     var href: String? = null
     var title: String? = null
-    var locations: Locations? = null // Now refers to local Locations.kt
-    var text: HighlightText? = null    // Now refers to local HighlightText.kt
+    var locations: Locations? = null
+    var text: HighlightText? = null
     var pre: String? = null
     var post: String? = null
     lateinit var highlight: HighlightImpl
     lateinit var textSelection: TextSelectionImpl
     var rank: Int = 0
 
+    // Fields for SearchViewModel/SearchAdapter
+    var searchItemType: SearchItemType? = null
+    var primaryContents: String? = null // For search count or resource title or search result snippet
+
+    // Main constructor
     constructor(
         href: String?,
         title: String?,
@@ -27,9 +32,11 @@ class SearchLocator : Parcelable {
         text: HighlightText?,
         pre: String?,
         post: String?,
-        highlight: HighlightImpl, // Expects non-null
-        textSelection: TextSelectionImpl, // Expects non-null
-        rank: Int
+        highlight: HighlightImpl,
+        textSelection: TextSelectionImpl,
+        rank: Int,
+        searchItemType: SearchItemType? = null, // Added
+        primaryContents: String? = null      // Added
     ) {
         this.href = href
         this.title = title
@@ -40,11 +47,45 @@ class SearchLocator : Parcelable {
         this.highlight = highlight
         this.textSelection = textSelection
         this.rank = rank
+        this.searchItemType = searchItemType
+        this.primaryContents = primaryContents
     }
 
-    private constructor() {
-        // Default constructor for Parcelable, lateinit properties will be initialized by parcel.readSerializable or constructor
+    // Public no-arg constructor for SearchViewModel
+    constructor() {
+        // Initialize lateinit properties with defaults if necessary,
+        // though SearchViewModel will set them.
+        // For simplicity, we assume SearchViewModel will populate needed fields.
+        // If HighlightImpl/TextSelectionImpl had no-arg constructors, they could be set here.
+        // As they don't, this constructor relies on subsequent direct field assignments.
+        // To make lateinit happy if these are NOT set by SearchViewModel immediately:
+        if (!this::highlight.isInitialized) {
+            this.highlight = HighlightImpl() // Assuming HighlightImpl() is a valid default
+        }
+        if (!this::textSelection.isInitialized) {
+            this.textSelection = TextSelectionImpl() // Assuming TextSelectionImpl() is a valid default
+        }
     }
+
+
+    // Constructor for R2 Locator mapping in SearchViewModel
+    constructor(
+        originalLocator: org.readium.r2.shared.Locator,
+        primaryContents: String?,
+        searchItemType: SearchItemType?
+    ) : this() { // Calls the public no-arg constructor first
+        this.href = originalLocator.href
+        this.title = originalLocator.title
+        // We need to map originalLocator.locations and originalLocator.text
+        // For now, let's keep them null or provide placeholders
+        // this.locations = mapR2Locations(originalLocator.locations)
+        // this.text = mapR2HighlightText(originalLocator.text)
+        this.primaryContents = primaryContents
+        this.searchItemType = searchItemType
+        // highlight and textSelection will use defaults from no-arg constructor
+        // or SearchViewModel can refine them.
+    }
+
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     constructor(parcel: Parcel) : this() {
@@ -54,17 +95,18 @@ class SearchLocator : Parcelable {
         text = parcel.readParcelable(HighlightText::class.java.classLoader)
         pre = parcel.readString()
         post = parcel.readString()
-        // Ensure non-null assignment for lateinit properties
-        highlight = parcel.readSerializable(HighlightImpl::class.java.classLoader, HighlightImpl::class.java)
-            ?: throw NullPointerException("Null HighlightImpl from Parcel") // Or handle more gracefully
-        textSelection = parcel.readSerializable(TextSelectionImpl::class.java.classLoader, TextSelectionImpl::class.java)
-            ?: throw NullPointerException("Null TextSelectionImpl from Parcel") // Or handle more gracefully
+        highlight = parcel.readSerializable(HighlightImpl::class.java.classLoader, HighlightImpl::class.java) as? HighlightImpl
+            ?: HighlightImpl()
+        textSelection = parcel.readSerializable(TextSelectionImpl::class.java.classLoader, TextSelectionImpl::class.java) as? TextSelectionImpl
+            ?: TextSelectionImpl()
         rank = parcel.readInt()
+        searchItemType = parcel.readSerializable(SearchItemType::class.java.classLoader, SearchItemType::class.java) as? SearchItemType
+        primaryContents = parcel.readString()
     }
 
     override fun writeToParcel(parcel: Parcel, flags: Int) {
         parcel.writeString(href)
-        parcel.writeString(this.title)
+        parcel.writeString(title)
         parcel.writeParcelable(locations, flags)
         parcel.writeParcelable(text, flags)
         parcel.writeString(pre)
@@ -72,6 +114,8 @@ class SearchLocator : Parcelable {
         parcel.writeSerializable(highlight)
         parcel.writeSerializable(textSelection)
         parcel.writeInt(rank)
+        parcel.writeSerializable(searchItemType)
+        parcel.writeString(primaryContents)
     }
 
     override fun describeContents(): Int {
@@ -90,6 +134,7 @@ class SearchLocator : Parcelable {
 
         @JvmStatic
         fun fromJson(jsonString: String?): SearchLocator? {
+            // This fromJson might need updates if searchItemType/primaryContents are in JSON
             return if (jsonString == null) {
                 null
             } else {
@@ -106,16 +151,12 @@ class SearchLocator : Parcelable {
                 val pre = jsonObject.optString("pre")
                 val post = jsonObject.optString("post")
 
-                // Corrected logic to ensure non-null for constructor
-                val highlightJson = jsonObject.optJSONObject("highlight")
-                val highlight: HighlightImpl = highlightJson?.let { HighlightImpl.fromJson(it) } ?: HighlightImpl() // Provides a default if null
-
-                val textSelectionJson = jsonObject.optJSONObject("textSelection")
-                val textSelection: TextSelectionImpl = textSelectionJson?.let { TextSelectionImpl.fromJson(it) } ?: TextSelectionImpl() // Provides a default if null
-
+                val highlight: HighlightImpl = jsonObject.optJSONObject("highlight")?.let { HighlightImpl.fromJson(it) } ?: HighlightImpl()
+                val textSelection: TextSelectionImpl = jsonObject.optJSONObject("textSelection")?.let { TextSelectionImpl.fromJson(it) } ?: TextSelectionImpl()
                 val rank = jsonObject.optInt("rank")
 
-                SearchLocator(href, title, locations, text, pre, post, highlight, textSelection, rank)
+                // Assuming searchItemType and primaryContents are not typically from this generic JSON
+                SearchLocator(href, title, locations, text, pre, post, highlight, textSelection, rank, null, null)
             }
         }
     }

@@ -84,7 +84,7 @@ public class FolioReader {
         public void onReceive(Context context, Intent intent) {
 
             ReadLocator readLocator =
-                    (ReadLocator) intent.getSerializableExtra(FolioReader.EXTRA_READ_LOCATOR);
+                    intent.getParcelableExtra(FolioReader.EXTRA_READ_LOCATOR);
             if (readLocatorListener != null)
                 readLocatorListener.saveReadLocator(readLocator);
         }

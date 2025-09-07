@@ -101,8 +101,8 @@ class SearchViewModel : ViewModel() {
                 liveAdapterDataBundle.value = bundle
 
             } else {
-                val liveSearchCountItems = liveList.first().primaryContents.toInt()
-                val responseSearchCountItems = responseList.first().primaryContents.toInt()
+                val liveSearchCountItems = liveList.first().primaryContents?.toIntOrNull() ?: 0
+                val responseSearchCountItems = responseList.first().primaryContents?.toIntOrNull() ?: 0
                 val totalLiveSearchCountItems = liveSearchCountItems + responseSearchCountItems
                 liveList.first().primaryContents = totalLiveSearchCountItems.toString()
 

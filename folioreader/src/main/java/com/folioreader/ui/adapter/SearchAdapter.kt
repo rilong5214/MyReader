@@ -47,13 +47,12 @@ class SearchAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
         listViewType = ListViewType.fromString(dataBundle.getString(ListViewType.KEY))
         searchLocatorList = dataBundle.getParcelableArrayList("DATA") ?: mutableListOf()
-        notifyDataSetChanged()
     }
 
     override fun getItemCount(): Int {
 
         return when {
-            searchLocatorList.size == 0 -> 1
+            searchLocatorList.isEmpty() -> 1
             listViewType == ListViewType.PAGINATION_IN_PROGRESS_VIEW -> searchLocatorList.size + 1
             else -> searchLocatorList.size
         }
@@ -172,7 +171,7 @@ class SearchAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder> {
             when (searchLocator.searchItemType) {
 
                 SearchItemType.SEARCH_COUNT_ITEM -> {
-                    val count: Int = searchLocator.primaryContents.toInt()
+                    val count: Int = searchLocator.primaryContents?.toIntOrNull() ?: 0
                     textViewCount.text = context.resources.getQuantityString(
                         R.plurals.numberOfSearchResults, count, count
                     )
@@ -184,7 +183,7 @@ class SearchAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder> {
                 }
 
                 SearchItemType.RESOURCE_TITLE_ITEM -> {
-                    textViewTitle.text = searchLocator.primaryContents
+                    textViewTitle.text = searchLocator.primaryContents ?: ""
                     textViewTitle.visibility = View.VISIBLE
                     textViewCount.visibility = View.GONE
                     textViewResult.visibility = View.GONE
@@ -194,13 +193,17 @@ class SearchAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
                 SearchItemType.SEARCH_RESULT_ITEM -> {
 
-                    val spannableString = SpannableString(
-                        searchLocator.text?.before
-                                + searchLocator.text?.hightlight
-                                + searchLocator.text?.after
-                    )
-                    val from = searchLocator.text?.before?.length ?: 0
-                    val to = from + (searchLocator.text?.hightlight?.length ?: 0)
+                    // In SearchAdapter.kt, NormalViewHolder, for SEARCH_RESULT_ITEM:
+                    // ...
+                    val beforeText = searchLocator.pre ?: ""
+                    val highlightedText = searchLocator.highlight.content ?: "" // Accessing the field from HighlightImpl
+                    val afterText = searchLocator.post ?: ""
+
+                    val fullText = beforeText + highlightedText + afterText
+                    val spannableString = SpannableString(fullText)
+                    val from = beforeText.length
+                    val to = from + highlightedText.length
+                    // ...
                     spannableString.setSpan(StyleSpan(Typeface.BOLD), from, to, 0)
                     spannableString.setSpan(UnderlineSpan(), from, to, 0)
                     textViewResult.text = spannableString

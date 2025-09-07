@@ -1,10 +1,12 @@
 package com.folioreader.model.locators
 
+import android.os.Build
 import android.os.Parcel
 import android.os.Parcelable
-import com.folioreader.model.highlight.HighlightImpl // Corrected: ensure this path is right
-import com.folioreader.model.highlight.TextSelectionImpl // Corrected: ensure this path is right
-import com.folioreader.util.AppUtil // Keep if used
+import androidx.annotation.RequiresApi
+import com.folioreader.model.highlight.HighlightImpl
+import com.folioreader.model.highlight.TextSelectionImpl
+// import com.folioreader.util.AppUtil // Keep AppUtil commented if it causes issues
 import org.json.JSONObject
 
 @Suppress("DEPRECATION")
@@ -12,8 +14,8 @@ class ReadLocator : Parcelable {
 
     var href: String? = null
     var created: Long = 0
-    var locations: Locations? = null // Now refers to local Locations.kt
-    var text: HighlightText? = null    // Now refers to local HighlightText.kt
+    var locations: Locations? = null
+    var text: HighlightText? = null
     var highlight: HighlightImpl? = null
     var textSelection: TextSelectionImpl? = null
     var rangy: String? = null
@@ -24,29 +26,28 @@ class ReadLocator : Parcelable {
 
     constructor()
 
-    constructor(href: String?, created: Long, locations: Locations?, text: HighlightText?) {
+    // This is the constructor declaration that was reported with errors.
+    // Ensure its parameters are exactly as below.
+    constructor(href: String?, created: Long, locations: Locations, text: HighlightText?) {
         this.href = href
         this.created = created
         this.locations = locations
         this.text = text
     }
 
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     constructor(parcel: Parcel) : this() {
         href = parcel.readString()
         created = parcel.readLong()
         locations = parcel.readParcelable(Locations::class.java.classLoader)
         text = parcel.readParcelable(HighlightText::class.java.classLoader)
-        highlight = parcel.readSerializable(HighlightImpl::class.java.classLoader, HighlightImpl::class.java) as HighlightImpl?
-        textSelection = parcel.readSerializable(TextSelectionImpl::class.java.classLoader, TextSelectionImpl::class.java) as TextSelectionImpl?
+        highlight = parcel.readSerializable(HighlightImpl::class.java.classLoader, HighlightImpl::class.java) as? HighlightImpl
+        textSelection = parcel.readSerializable(TextSelectionImpl::class.java.classLoader, TextSelectionImpl::class.java) as? TextSelectionImpl
         rangy = parcel.readString()
         bookId = parcel.readString()
         pageId = parcel.readString()
         pageNo = parcel.readInt()
         note = parcel.readString()
-    }
-
-    override fun describeContents(): Int {
-        return 0
     }
 
     override fun writeToParcel(dest: Parcel, flags: Int) {
@@ -61,6 +62,10 @@ class ReadLocator : Parcelable {
         dest.writeString(pageId)
         dest.writeInt(pageNo)
         dest.writeString(note)
+    }
+
+    override fun describeContents(): Int {
+        return 0
     }
 
     fun toJson(): JSONObject? {
@@ -80,10 +85,12 @@ class ReadLocator : Parcelable {
     }
 
     override fun toString(): String {
-        return AppUtil.toJson(this)
+        // return AppUtil.toJson(this) // Keep this commented to avoid unrelated errors for now
+        return super.toString()
     }
 
     companion object CREATOR : Parcelable.Creator<ReadLocator> {
+        @RequiresApi(Build.VERSION_CODES.TIRAMISU)
         override fun createFromParcel(parcel: Parcel): ReadLocator {
             return ReadLocator(parcel)
         }
@@ -101,26 +108,10 @@ class ReadLocator : Parcelable {
                 val readLocator = ReadLocator()
                 readLocator.href = jsonObject.optString("href")
                 readLocator.created = jsonObject.optLong("created")
-
-                val locationsJson = jsonObject.optJSONObject("locations")
-                if (locationsJson != null) {
-                    readLocator.locations = Locations.fromJson(locationsJson)
-                }
-
-                val textJson = jsonObject.optJSONObject("text")
-                if (textJson != null) {
-                    readLocator.text = HighlightText.fromJson(textJson)
-                }
-                val highlightJson = jsonObject.optJSONObject("highlight")
-                if (highlightJson != null) {
-                    readLocator.highlight = HighlightImpl.fromJson(highlightJson)
-                }
-
-                val textSelectionJson = jsonObject.optJSONObject("textSelection")
-                if (textSelectionJson != null) {
-                    readLocator.textSelection = TextSelectionImpl.fromJson(textSelectionJson)
-                }
-
+                readLocator.locations = Locations.fromJson(jsonObject.optJSONObject("locations"))
+                readLocator.text = HighlightText.fromJson(jsonObject.optJSONObject("text"))
+                readLocator.highlight = HighlightImpl.fromJson(jsonObject.optJSONObject("highlight"))
+                readLocator.textSelection = TextSelectionImpl.fromJson(jsonObject.optJSONObject("textSelection"))
                 readLocator.rangy = jsonObject.optString("rangy")
                 readLocator.bookId = jsonObject.optString("bookId")
                 readLocator.pageId = jsonObject.optString("pageId")

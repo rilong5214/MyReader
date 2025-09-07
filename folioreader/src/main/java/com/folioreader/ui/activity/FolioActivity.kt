@@ -72,6 +72,7 @@ import org.readium.r2.streamer.parser.CbzParser
 import org.readium.r2.streamer.parser.EpubParser
 import org.readium.r2.streamer.parser.PubBox
 import org.readium.r2.streamer.server.Server
+import java.io.Serializable
 import java.lang.ref.WeakReference
 
 class FolioActivity : AppCompatActivity(), FolioActivityCallback, MediaControllerCallback,
@@ -833,7 +834,9 @@ class FolioActivity : AppCompatActivity(), FolioActivityCallback, MediaControlle
         super.onDestroy()
 
         if (outState != null)
-            outState!!.putSerializable(BUNDLE_READ_LOCATOR_CONFIG_CHANGE, lastReadLocator)
+            outState!!.putSerializable(BUNDLE_READ_LOCATOR_CONFIG_CHANGE,
+                lastReadLocator as Serializable?
+            )
 
         val localBroadcastManager = LocalBroadcastManager.getInstance(this)
         localBroadcastManager.unregisterReceiver(searchReceiver)
@@ -946,7 +949,7 @@ class FolioActivity : AppCompatActivity(), FolioActivityCallback, MediaControlle
         return 0
     }
 
-    private fun getChapterIndex(caseString: String, value: String): Int {
+    private fun getChapterIndex(caseString: String, value: String?): Int {
         for (i in spine!!.indices) {
             when (caseString) {
                 Constants.HREF -> if (spine!![i].href == value)

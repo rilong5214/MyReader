@@ -49,7 +49,8 @@ import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
 import org.readium.r2.shared.Link
-import org.readium.r2.shared.Locations
+// import org.readium.r2.shared.Locations
+import java.io.Serializable
 import java.util.*
 import java.util.regex.Pattern
 import kotlin.math.ceil
@@ -441,7 +442,7 @@ class FolioPageFragment : Fragment(),
 
                 } else if (isCurrentFragment) {
                     // lastReadLocator can be null if getLastReadLocator() wasn't called or failed
-                    val cfi = lastReadLocator!!.locations.cfi // Potential NPE
+                    val cfi = lastReadLocator!!.locations?.cfi // Potential NPE
                     mWebview?.loadUrl(String.format(getString(R.string.callScrollToCfi), cfi))
 
                 } else {
@@ -485,7 +486,7 @@ class FolioPageFragment : Fragment(),
                 }
 
                 if (readLocator != null) {
-                    val cfi = readLocator.locations.cfi
+                    val cfi = readLocator.locations?.cfi
                     Log.v(LOG_TAG, "-> onPageFinished -> readLocator -> " + cfi!!) // Potential NPE if cfi is null
                     mWebview?.loadUrl(String.format(getString(R.string.callScrollToCfi), cfi))
                 } else {
@@ -618,9 +619,10 @@ class FolioPageFragment : Fragment(),
             var href = spineItem.href // spineItem lateinit
             if (href == null) href = "" // Redundant due to lateinit
             val created = Date().time
-            val locations = Locations()
-            locations.cfi = cfi
-            lastReadLocator = ReadLocator(mBookId!!, href, created, locations) // mBookId can be null
+            val folioReaderLocalLocations = com.folioreader.model.locators.Locations()
+            folioReaderLocalLocations.cfi = cfi
+            lastReadLocator = ReadLocator(href = href, created = created, locations = folioReaderLocalLocations, text = null)
+            lastReadLocator?.bookId = mBookId
 
             val intent = Intent(FolioReader.ACTION_SAVE_READ_LOCATOR)
             intent.putExtra(FolioReader.EXTRA_READ_LOCATOR, lastReadLocator as Parcelable?)
@@ -854,7 +856,9 @@ class FolioPageFragment : Fragment(),
         if (isCurrentFragment) {
             if (outState != null)
                 //TODO: Replace with type-safe getParcelable (API 33+) if possible
-                outState!!.putSerializable(BUNDLE_READ_LOCATOR_CONFIG_CHANGE, lastReadLocator) // outState can be null
+                outState!!.putSerializable(BUNDLE_READ_LOCATOR_CONFIG_CHANGE,
+                    lastReadLocator as Serializable?
+                ) // outState can be null
             if (isAdded && !requireActivity().isFinishing && lastReadLocator != null) // Changed from activity!!
                 mActivityCallback!!.storeLastReadLocator(lastReadLocator) // mActivityCallback can be null
         }
