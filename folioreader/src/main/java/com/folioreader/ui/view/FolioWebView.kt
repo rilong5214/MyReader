@@ -487,19 +487,21 @@ class FolioWebView : WebView {
         }
     }
 
-    override fun startActionMode(callback: Callback): ActionMode {
+    override fun startActionMode(callback: Callback): ActionMode? {
         textSelectionCb = TextSelectionCb()
-        actionMode = super.startActionMode(textSelectionCb)
-        actionMode?.finish() // Finish immediately to prevent system controls, rely on custom popup
-        return actionMode!! // Must return a non-null ActionMode
+        val am = super.startActionMode(textSelectionCb)
+        am?.finish() // Finish immediately to prevent system controls, rely on custom popup
+        actionMode = am
+        return am
     }
 
     @RequiresApi(api = Build.VERSION_CODES.M)
-    override fun startActionMode(callback: Callback, type: Int): ActionMode {
+    override fun startActionMode(callback: Callback, type: Int): ActionMode? {
         textSelectionCb2 = TextSelectionCb2()
-        actionMode = super.startActionMode(textSelectionCb2, type)
-        actionMode?.finish() // Finish immediately
-        return actionMode!! // Must return a non-null ActionMode
+        val am = super.startActionMode(textSelectionCb2, type)
+        am?.finish() // Finish immediately
+        actionMode = am
+        return am
     }
 
     @JavascriptInterface
