@@ -263,15 +263,15 @@ class FolioWebView : WebView {
 
         textSelectionBinding.copySelection.setOnClickListener {
             dismissPopupWindow()
-            loadUrl("javascript:onTextSelectionItemClicked('''${R.id.copySelection}''')")
+            loadUrl("javascript:onTextSelectionItemClicked(${R.id.copySelection})")
         }
         textSelectionBinding.shareSelection.setOnClickListener {
             dismissPopupWindow()
-            loadUrl("javascript:onTextSelectionItemClicked('''${R.id.shareSelection}''')")
+            loadUrl("javascript:onTextSelectionItemClicked(${R.id.shareSelection})")
         }
         textSelectionBinding.defineSelection.setOnClickListener {
             dismissPopupWindow()
-            loadUrl("javascript:onTextSelectionItemClicked('''${R.id.defineSelection}''')")
+            loadUrl("javascript:onTextSelectionItemClicked(${R.id.defineSelection})")
         }
     }
 

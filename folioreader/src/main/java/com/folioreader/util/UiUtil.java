@@ -5,6 +5,7 @@ import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
+import android.content.ActivityNotFoundException;
 import android.content.res.ColorStateList;
 import android.content.res.Resources;
 import android.content.res.TypedArray;
@@ -151,12 +152,23 @@ public class UiUtil {
     }
 
     public static void share(Context context, String text) {
-        Intent sendIntent = new Intent();
-        sendIntent.setAction(Intent.ACTION_SEND);
+        if (TextUtils.isEmpty(text)) return;
+        Intent sendIntent = new Intent(Intent.ACTION_SEND);
         sendIntent.putExtra(Intent.EXTRA_TEXT, text);
         sendIntent.setType("text/plain");
-        context.startActivity(Intent.createChooser(sendIntent,
-                context.getResources().getText(R.string.send_to)));
+
+        Intent chooser = Intent.createChooser(sendIntent,
+                context.getResources().getText(R.string.send_to));
+
+        if (!(context instanceof Activity)) {
+            chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        }
+
+        try {
+            context.startActivity(chooser);
+        } catch (ActivityNotFoundException e) {
+            Log.e(LOG_TAG, "No activity found to handle share", e);
+        }
     }
 
     public static void setColorIntToDrawable(@ColorInt int color, Drawable drawable) {
