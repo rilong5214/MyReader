@@ -106,6 +106,6 @@ dependencies {
         changing = true
     }
 
-    implementation 'org.springframework:spring-core:6.2.10'
-    // This is quite old, consider if it's truly needed or can be updated/replaced
+    // Removed JVM-only dependency that breaks Android dexing (record desugaring/global synthetics)
+    // implementation 'org.springframework:spring-core:6.2.10'
 }

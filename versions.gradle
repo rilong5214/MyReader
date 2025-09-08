@@ -12,7 +12,7 @@ versions.androidCompileSdk = 35
 versions.androidTargetSdk = 28
 
 // UPDATED: Use newer Android Gradle Plugin version
-versions.androidGradlePlugin = '8.12.2' // Compatible with Gradle 8.5
+versions.androidGradlePlugin = '8.13.0' // Compatible with Gradle 8.5
 versions.kotlin = '2.2.10' // Compatible with AGP 8.1.0
 
 versions.appcompat = '1.7.1'           // Updated

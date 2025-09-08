@@ -40,7 +40,6 @@ import com.folioreader.util.HighlightUtil
 import com.folioreader.util.UiUtil
 import dalvik.system.PathClassLoader
 import org.json.JSONObject
-import org.springframework.util.ReflectionUtils
 import java.lang.ref.WeakReference
 import java.util.*
 
