@@ -145,6 +145,7 @@ public class UiUtil {
     }
 
     public static void copyToClipboard(Context context, String text) {
+        if (TextUtils.isEmpty(text)) return;
         ClipboardManager clipboard =
                 (ClipboardManager) context.getSystemService(Context.CLIPBOARD_SERVICE);
         ClipData clip = ClipData.newPlainText("copy", text);

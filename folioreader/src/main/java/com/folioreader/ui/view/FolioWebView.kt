@@ -273,18 +273,30 @@ class FolioWebView : WebView {
             dismissPopupWindow()
             loadUrl("javascript:onTextSelectionItemClicked(${R.id.defineSelection})")
         }
+        textSelectionBinding.searchChatGptSelection.setOnClickListener {
+            dismissPopupWindow()
+            loadUrl("javascript:onTextSelectionItemClicked(${R.id.searchChatGptSelection})")
+        }
     }
 
     @JavascriptInterface
     fun onTextSelectionItemClicked(id: Int, selectedText: String?) {
         uiHandler.post { loadUrl("javascript:clearSelection()") }
-        when (id) {
-            R.id.copySelection -> {
-                UiUtil.copyToClipboard(context, selectedText)
-                Toast.makeText(context, context.getString(R.string.copied), Toast.LENGTH_SHORT).show()
+        // Defensive: cap selection to avoid heavy IPC/buffer issues
+        val capped = selectedText?.let { if (it.length > 5000) it.substring(0, 5000) else it }
+        try {
+            when (id) {
+                R.id.copySelection -> {
+                    UiUtil.copyToClipboard(context, capped)
+                    Toast.makeText(context, context.getString(R.string.copied), Toast.LENGTH_SHORT).show()
+                }
+                R.id.shareSelection -> UiUtil.share(context, capped)
+                R.id.defineSelection -> uiHandler.post { showDictDialog(capped) }
+                R.id.searchChatGptSelection -> uiHandler.post { parentFragment.openChatGptWithQuery(capped) }
             }
-            R.id.shareSelection -> UiUtil.share(context, selectedText)
-            R.id.defineSelection -> uiHandler.post { showDictDialog(selectedText) }
+        } catch (t: Throwable) {
+            // Swallow to prevent app crash on unexpected edge cases
+            Log.e(LOG_TAG, "Error handling selection action", t)
         }
     }
 

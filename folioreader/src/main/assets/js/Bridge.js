@@ -822,8 +822,15 @@ function onTextSelectionItemClicked(id) {
     if (selectionType == "Range") {
         selectedText = window.getSelection().toString();
     } else {
-        selectedText = thisHighlight.textContent;
+        selectedText = thisHighlight && thisHighlight.textContent ? thisHighlight.textContent : "";
     }
+    // Truncate overly long selections to avoid JS-to-Java bridge issues (TransactionTooLarge, OOM)
+    try {
+        var MAX_SELECTION_CHARS = 5000;
+        if (selectedText && selectedText.length > MAX_SELECTION_CHARS) {
+            selectedText = selectedText.substr(0, MAX_SELECTION_CHARS);
+        }
+    } catch (e) {}
     FolioWebView.onTextSelectionItemClicked(id, selectedText);
 }
 

@@ -25,6 +25,21 @@
 
     </FrameLayout>
 
+    <!-- Right-side ChatGPT container, initially hidden. Will be sized to half width at runtime -->
+    <FrameLayout
+        android:id="@+id/chatGptContainer"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_alignParentRight="true"
+        android:layout_above="@id/indicatorLayout"
+        android:visibility="gone">
+
+        <WebView
+            android:id="@+id/chatGptWebView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+    </FrameLayout>
+
     <com.folioreader.ui.view.LoadingView
         android:id="@+id/loadingView"
         android:layout_width="match_parent"

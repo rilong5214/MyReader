@@ -20,6 +20,7 @@ import android.view.animation.Animation
 import android.view.animation.AnimationUtils
 import android.webkit.*
 import android.widget.FrameLayout
+import android.widget.RelativeLayout
 import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
@@ -54,6 +55,8 @@ import org.readium.r2.shared.Link
 import java.io.Serializable
 import java.util.*
 import java.util.regex.Pattern
+import java.net.URLEncoder
+import org.json.JSONObject
 import kotlin.math.ceil
 import kotlin.math.floor
 
@@ -107,6 +110,11 @@ class FolioPageFragment : Fragment(),
     private var mPagesLeftTextView: TextView? = null
     private var mMinutesLeftTextView: TextView? = null
     private var mActivityCallback: FolioActivityCallback? = null
+
+    // ChatGPT side panel
+    private var chatGptContainer: FrameLayout? = null
+    private var chatGptWebView: WebView? = null
+    private var pendingChatGptQuery: String? = null
 
     private var mTotalMinutes: Int = 0
     private var mFadeInAnimation: Animation? = null
@@ -177,6 +185,7 @@ class FolioPageFragment : Fragment(),
         initSeekbar()
         initAnimations()
         initWebView()
+        initChatGptPanel()
         updatePagesLeftTextBg()
 
         return mRootView
@@ -720,6 +729,82 @@ class FolioPageFragment : Fragment(),
             Log.e("divide error", exp.toString())
         }
 
+    }
+
+    private fun initChatGptPanel() {
+        chatGptContainer = mRootView?.findViewById(R.id.chatGptContainer)
+        chatGptWebView = mRootView?.findViewById(R.id.chatGptWebView)
+
+        chatGptWebView?.settings?.javaScriptEnabled = true
+        chatGptWebView?.settings?.domStorageEnabled = true
+        chatGptWebView?.webViewClient = object : WebViewClient() {
+            override fun onPageFinished(view: WebView, url: String) {
+                super.onPageFinished(view, url)
+                val query = pendingChatGptQuery
+                if (!query.isNullOrBlank()) {
+                    // Try to paste the text into a likely input element
+                    val js = """
+                        (function(){try{var q=${JSONObject.quote(query)};var el=document.querySelector('textarea, [contenteditable="true"]');if(el){el.focus();if(el.tagName==='TEXTAREA'){el.value=q;el.dispatchEvent(new Event('input',{bubbles:true}));}else{el.textContent=q;var evt=document.createEvent('HTMLEvents');evt.initEvent('input',true,true);el.dispatchEvent(evt);}}}catch(e){}})();
+                    """.trimIndent()
+                    try {
+                        view.evaluateJavascript(js, null)
+                    } catch (_: Throwable) {
+                    }
+                }
+            }
+        }
+    }
+
+    private fun openChatGptWithQueryInternal(selectedText: String?) {
+        val query = selectedText?.trim()
+        if (query.isNullOrEmpty()) return
+        // Cap query length to avoid excessively long URLs and heavy page scripts
+        val safeQuery = if (query.length > 512) query.substring(0, 512) else query
+        pendingChatGptQuery = safeQuery
+
+        // Make right panel visible and split widths 50/50
+        val rootWidth = resources.displayMetrics.widthPixels
+        val half = rootWidth / 2
+        val webLayout: FrameLayout? = mRootView?.findViewById(R.id.webViewLayout)
+        webLayout?.layoutParams = (webLayout?.layoutParams as? RelativeLayout.LayoutParams)?.apply {
+            width = half
+            height = RelativeLayout.LayoutParams.MATCH_PARENT
+            addRule(RelativeLayout.ALIGN_PARENT_LEFT, RelativeLayout.TRUE)
+            addRule(RelativeLayout.ABOVE, R.id.indicatorLayout)
+        } ?: RelativeLayout.LayoutParams(half, RelativeLayout.LayoutParams.MATCH_PARENT).apply {
+            addRule(RelativeLayout.ALIGN_PARENT_LEFT, RelativeLayout.TRUE)
+            addRule(RelativeLayout.ABOVE, R.id.indicatorLayout)
+        }
+
+        chatGptContainer?.layoutParams = (chatGptContainer?.layoutParams as? RelativeLayout.LayoutParams)?.apply {
+            width = half
+            height = RelativeLayout.LayoutParams.MATCH_PARENT
+            addRule(RelativeLayout.ALIGN_PARENT_RIGHT, RelativeLayout.TRUE)
+            addRule(RelativeLayout.ABOVE, R.id.indicatorLayout)
+        } ?: RelativeLayout.LayoutParams(half, RelativeLayout.LayoutParams.MATCH_PARENT).apply {
+            addRule(RelativeLayout.ALIGN_PARENT_RIGHT, RelativeLayout.TRUE)
+            addRule(RelativeLayout.ABOVE, R.id.indicatorLayout)
+        }
+        chatGptContainer?.visibility = View.VISIBLE
+
+        // Load ChatGPT (may require login). Fallback to Google search if it fails to load input later.
+        val encoded = try { URLEncoder.encode(query, "UTF-8") } catch (e: Exception) { query }
+        val url = "https://chat.openai.com/?q=$encoded"
+        try {
+            chatGptWebView?.loadUrl(url)
+        } catch (_: Throwable) {
+            chatGptWebView?.loadUrl("https://www.google.com/search?q=site:chat.openai.com+" + encoded)
+        }
+    }
+
+    fun openChatGptWithQuery(selectedText: String?) {
+        if (!isAdded) return
+        requireActivity().runOnUiThread {
+            if (chatGptContainer == null || chatGptWebView == null) {
+                initChatGptPanel()
+            }
+            openChatGptWithQueryInternal(selectedText)
+        }
     }
 
     private fun initAnimations() {
