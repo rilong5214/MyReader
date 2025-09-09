@@ -25,10 +25,10 @@ public class FileUtil {
                                                      int epubRawId, String epubFileName) {
         String filePath;
         InputStream epubInputStream;
-        boolean isFolderAvailable;
         try {
-            isFolderAvailable = isFolderAvailable(epubFileName);
-            filePath = getFolioEpubFilePath(epubSourceType, epubFilePath, epubFileName);
+            filePath = getFolioEpubFilePath(context, epubSourceType, epubFilePath, epubFileName);
+            File target = new File(filePath);
+            boolean isFolderAvailable = target.getParentFile() != null && target.getParentFile().isDirectory();
 
             if (!isFolderAvailable) {
                 if (epubSourceType.equals(FolioActivity.EpubSourceType.RAW)) {
@@ -56,11 +56,12 @@ public class FileUtil {
                 + "/" + FOLIO_READER_ROOT + "/" + epubFileName;
     }
 
-    public static String getFolioEpubFilePath(FolioActivity.EpubSourceType sourceType, String epubFilePath, String epubFileName) {
+    public static String getFolioEpubFilePath(Context context, FolioActivity.EpubSourceType sourceType, String epubFilePath, String epubFileName) {
         if (FolioActivity.EpubSourceType.SD_CARD.equals(sourceType)) {
             return epubFilePath;
         } else {
-            return getFolioEpubFolderPath(epubFileName) + "/" + epubFileName + ".epub";
+            File folder = new File(new File(context.getFilesDir(), FOLIO_READER_ROOT), epubFileName);
+            return new File(folder, epubFileName + ".epub").getAbsolutePath();
         }
     }
 
@@ -90,8 +91,10 @@ public class FileUtil {
         File file = new File(filePath);
         try {
             if (!file.exists()) {
-                File folder = new File(getFolioEpubFolderPath(fileName));
-                folder.mkdirs();
+                File folder = file.getParentFile();
+                if (folder != null) {
+                    folder.mkdirs();
+                }
 
                 outputStream = new FileOutputStream(file);
                 int read = 0;

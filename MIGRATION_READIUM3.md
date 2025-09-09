@@ -1,0 +1,6 @@
+- r2-* は残したまま Readium 3 を併置
+- R2StreamerApi → Streamer.open(file)
+- FolioActivity(WebView) → EpubNavigatorFragment
+- CFI → Locator
+- ハイライトAPI置換 → 既存SQLite流用
+- 完了後に r2-* 依存を削除

@@ -11,7 +11,7 @@ android {
 
     defaultConfig {
         applicationId "com.folioreader.android.sample"
-        minSdkVersion versions.androidMinSdk
+        minSdkVersion 26
         targetSdkVersion versions.androidTargetSdk
         versionCode versions.projectVersionCode
         versionName versions.projectVersionName
