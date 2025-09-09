@@ -70,7 +70,10 @@ dependencies {
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.7.0'
     coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.5'
 
-    implementation project(':folioreader')
+    implementation(project(":folioreader")) {
+        exclude group: "com.github.codetoart"                 // r2-shared-kotlin / r2-streamer-kotlin
+        exclude group: "com.github.NanoHttpd.nanohttpd"       // nanohttpd / nanolets
+    }
     //implementation "com.folioreader:folioreader:$versions.folioreaderSdk"
 
     // Use Jackson BOM to manage all jackson module versions consistently
@@ -80,6 +83,13 @@ dependencies {
     implementation "com.fasterxml.jackson.core:jackson-databind"
     implementation "com.fasterxml.jackson.module:jackson-module-kotlin"
 
+    // ★ Readium v3（Reader3Activityで直接使うため sample にも入れる）
+    implementation "org.readium.kotlin-toolkit:readium-shared:3.1.1"
+    implementation "org.readium.kotlin-toolkit:readium-navigator:3.1.1"
+    implementation "org.readium.kotlin-toolkit:readium-streamer:3.1.1"
+
+    // ★ commit{} や replace() の拡張を使うため
+    implementation "androidx.fragment:fragment-ktx:1.8.9"
     //progressBar error solve
     //configurations.matching { it.name == '_internal_aapt2_binary' }.all { config ->
     //    config.resolutionStrategy.eachDependency { details ->
