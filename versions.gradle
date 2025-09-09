@@ -21,9 +21,13 @@ versions.recyclerview = '1.4.0'        // Updated
 versions.material = '1.13.0'            // Updated
 
 versions.retrofit = '3.0.0'            // Updated
-versions.jackson = '2.17.2'            // Use widely available Jackson version
+versions.jackson = '2.20.0'            // Use widely available Jackson version
 versions.gson = '2.13.1'                // Updated
 
 versions.lifecycle = "2.4.1"           // Updated
+
+// Added per migration requirements
+versions.okhttp = '5.1.0'
+versions.coroutines = '1.10.2'
 
 ext.versions = versions

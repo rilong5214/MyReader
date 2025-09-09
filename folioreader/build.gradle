@@ -20,8 +20,18 @@ android {
     sourceSets {
         main {
             manifest.srcFile 'AndroidManifest.xml'
-            java.srcDirs = ['src/main/java']
-            res.srcDirs = ['res'] // Ensure this path is correct: 'src/main/res' or just 'res'
+            java {
+                srcDirs = ['src/main/java']
+                exclude 'com/folioreader/v3/**'
+                exclude '**/com/folioreader/v3/**'
+            }
+            // Also exclude for Kotlin source set to ensure KotlinCompile ignores it
+            kotlin {
+                srcDirs = ['src/main/java']
+                exclude 'com/folioreader/v3/**'
+                exclude '**/com/folioreader/v3/**'
+            }
+            res.srcDirs = ['res']
         }
         test {
             java.srcDirs = ['src/test/java']
@@ -29,12 +39,12 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_11 // **** CHANGE THIS ****
-        targetCompatibility JavaVersion.VERSION_11 // **** CHANGE THIS ****
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
     }
 
     kotlinOptions {
-        jvmTarget = '11' // **** CHANGE THIS ****
+        jvmTarget = '17'
     }
 
     // Added buildFeatures for View Binding
@@ -81,6 +91,9 @@ dependencies {
 
     implementation 'org.greenrobot:eventbus:3.3.1' // Consider updating if possible
 
+    // Coroutines for Readium3Starter
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:$versions.coroutines"
+
     // Use Jackson BOM to align versions consistently
     implementation platform("com.fasterxml.jackson:jackson-bom:$versions.jackson")
     implementation "com.fasterxml.jackson.core:jackson-core"
@@ -92,6 +105,21 @@ dependencies {
     implementation "com.squareup.retrofit2:retrofit:$versions.retrofit"
     implementation "com.squareup.retrofit2:converter-jackson:$versions.retrofit"
     implementation "com.squareup.retrofit2:converter-gson:$versions.retrofit"
+    implementation "com.squareup.okhttp3:okhttp:$versions.okhttp"
+
+    // Readium 3 (Kotlin Toolkit) alongside legacy r2-* modules
+    // Use compileOnly to avoid duplicate classes with legacy r2-* during packaging
+    def readium3 = "3.1.1"
+    // Ensure Kotlin compiler can resolve Readium 3 while avoiding runtime duplicates with legacy r2-*
+    compileOnly "org.readium.kotlin-toolkit:readium-shared:$readium3"
+    compileOnly "org.readium.kotlin-toolkit:readium-navigator:$readium3"
+    compileOnly "org.readium.kotlin-toolkit:readium-streamer:$readium3"
+    debugCompileOnly "org.readium.kotlin-toolkit:readium-shared:$readium3"
+    debugCompileOnly "org.readium.kotlin-toolkit:readium-navigator:$readium3"
+    debugCompileOnly "org.readium.kotlin-toolkit:readium-streamer:$readium3"
+    releaseCompileOnly "org.readium.kotlin-toolkit:readium-shared:$readium3"
+    releaseCompileOnly "org.readium.kotlin-toolkit:readium-navigator:$readium3"
+    releaseCompileOnly "org.readium.kotlin-toolkit:readium-streamer:$readium3"
 
     implementation "com.github.kittinunf.fuel:fuel:2.3.1" // Consider updating if possible
     implementation "com.github.kittinunf.fuel:fuel-android:2.3.1" // Consider updating if possible
@@ -109,3 +137,4 @@ dependencies {
     // Removed JVM-only dependency that breaks Android dexing (record desugaring/global synthetics)
     // implementation 'org.springframework:spring-core:6.2.10'
 }
+

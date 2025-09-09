@@ -20,7 +20,7 @@ class LocatorUnitTest {
         var locator = Locator("/OEBPS/ch03.xhtml", 1539934158390, "", locations, null)
 
         val objectMapper = ObjectMapper()
-        objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL)
+        objectMapper.setDefaultPropertyInclusion(JsonInclude.Include.NON_NULL)
         val jsonString = objectMapper.writeValueAsString(locator)
         println("jsonString = $jsonString")
 
