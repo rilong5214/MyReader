@@ -9,7 +9,7 @@ versions.projectVersionName = "1.0"
 
 versions.androidMinSdk = 21
 versions.androidCompileSdk = 35
-versions.androidTargetSdk = 28
+versions.androidTargetSdk = 35
 
 // UPDATED: Use newer Android Gradle Plugin version
 versions.androidGradlePlugin = '8.13.0' // Compatible with Gradle 8.5
