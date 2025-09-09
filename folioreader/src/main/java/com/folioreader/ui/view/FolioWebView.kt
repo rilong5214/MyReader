@@ -249,6 +249,18 @@ class FolioWebView : WebView {
         _textSelectionBinding = TextSelectionBinding.inflate(LayoutInflater.from(ctw), this, false)
         textSelectionBinding.root.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED)
 
+        // Prepare PopupWindow once and reuse it; ensure the view is detached before set as content
+        (textSelectionBinding.root.parent as? ViewGroup)?.removeView(textSelectionBinding.root)
+        popupWindow.contentView = textSelectionBinding.root
+        popupWindow.width = WRAP_CONTENT
+        popupWindow.height = WRAP_CONTENT
+        popupWindow.isClippingEnabled = false
+        try {
+            popupWindow.setBackgroundDrawable(BitmapDrawable())
+        } catch (_: Throwable) { }
+        popupWindow.isOutsideTouchable = true
+        popupWindow.isFocusable = false
+
         textSelectionBinding.yellowHighlight.setOnClickListener { onHighlightColorItemsClicked(HighlightStyle.Yellow, false) }
         textSelectionBinding.greenHighlight.setOnClickListener { onHighlightColorItemsClicked(HighlightStyle.Green, false) }
         textSelectionBinding.blueHighlight.setOnClickListener { onHighlightColorItemsClicked(HighlightStyle.Blue, false) }
@@ -564,9 +576,16 @@ class FolioWebView : WebView {
 
             if (oldScrollX == currentScrollX && oldScrollY == currentScrollY && !inTouchMode) {
                 if (!destroyed && _textSelectionBinding != null) { // Check binding again before use
-                    popupWindow = PopupWindow(textSelectionBinding.root, WRAP_CONTENT, WRAP_CONTENT)
-                    popupWindow.isClippingEnabled = false
-                    popupWindow.showAtLocation(this@FolioWebView, Gravity.NO_GRAVITY, popupRect.left, popupRect.top)
+                    // Ensure the root view is detached from any previous parent before reuse
+                    (textSelectionBinding.root.parent as? ViewGroup)?.removeView(textSelectionBinding.root)
+
+                    if (popupWindow.isShowing) {
+                        // Just update position
+                        popupWindow.update(popupRect.left, popupRect.top, -1, -1)
+                    } else {
+                        // Content and properties were set in init; show now
+                        popupWindow.showAtLocation(this@FolioWebView, Gravity.NO_GRAVITY, popupRect.left, popupRect.top)
+                    }
                 }
             } else {
                 oldScrollX = currentScrollX
