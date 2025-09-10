@@ -1,22 +1,23 @@
 apply plugin: 'com.android.application'
 apply plugin: 'checkstyle'
 apply plugin: 'kotlin-android'
-// REMOVED: apply plugin: 'kotlin-android-extensions'
-apply plugin: 'kotlin-parcelize' // ADDED for @Parcelize support
+apply plugin: 'kotlin-parcelize' // @Parcelize
 
 android {
-    namespace = "com.folioreader.android.sample" // ADDED namespace
+    namespace = "com.folioreader.android.sample"
 
-    compileSdkVersion versions.androidCompileSdk
+    // 推奨の新記法（既存の versions.* をそのまま使います）
+    compileSdk = versions.androidCompileSdk
 
     defaultConfig {
         applicationId "com.folioreader.android.sample"
-        minSdkVersion 26
-        targetSdkVersion versions.androidTargetSdk
+        minSdk = 26
+        targetSdk = versions.androidTargetSdk
         versionCode versions.projectVersionCode
         versionName versions.projectVersionName
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
-        multiDexEnabled = true
+        // minSdk 21+ なら multidex は基本不要
+        // multiDexEnabled = true
     }
 
     buildTypes {
@@ -26,7 +27,6 @@ android {
         }
     }
 
-    // ADDED View Binding
     buildFeatures {
         viewBinding = true
     }
@@ -56,6 +56,7 @@ android {
         exclude 'META-INF/services/javax.annotation.processing.Processor'
     }
 
+    // 旧 lintOptions は将来非推奨。必要なら：
     lintOptions {
         abortOnError = false
     }
@@ -70,31 +71,24 @@ dependencies {
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.7.0'
     coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.5'
 
+    // FolioReader は参照するが、旧 r2 系は sample からは除外（v3 と重複するため）
     implementation(project(":folioreader")) {
-        exclude group: "com.github.codetoart"                 // r2-shared-kotlin / r2-streamer-kotlin
-        exclude group: "com.github.NanoHttpd.nanohttpd"       // nanohttpd / nanolets
+        exclude group: "com.github.codetoart"               // r2-shared-kotlin / r2-streamer-kotlin
+        exclude group: "com.github.NanoHttpd.nanohttpd"     // nanohttpd / nanolets
     }
-    //implementation "com.folioreader:folioreader:$versions.folioreaderSdk"
 
-    // Use Jackson BOM to manage all jackson module versions consistently
+    // Jackson BOM（既存の versions.jackson を使用）
     implementation platform("com.fasterxml.jackson:jackson-bom:$versions.jackson")
     implementation "com.fasterxml.jackson.core:jackson-core"
     implementation "com.fasterxml.jackson.core:jackson-annotations"
     implementation "com.fasterxml.jackson.core:jackson-databind"
     implementation "com.fasterxml.jackson.module:jackson-module-kotlin"
 
-    // ★ Readium v3（Reader3Activityで直接使うため sample にも入れる）
+    // ★ Readium v3（Reader3Activity で直接使用するため sample にも追加）
     implementation "org.readium.kotlin-toolkit:readium-shared:3.1.1"
-    implementation "org.readium.kotlin-toolkit:readium-navigator:3.1.1"
     implementation "org.readium.kotlin-toolkit:readium-streamer:3.1.1"
+    implementation "org.readium.kotlin-toolkit:readium-navigator:3.1.1"
 
-    // ★ commit{} や replace() の拡張を使うため
-    implementation "androidx.fragment:fragment-ktx:1.8.9"
-    //progressBar error solve
-    //configurations.matching { it.name == '_internal_aapt2_binary' }.all { config ->
-    //    config.resolutionStrategy.eachDependency { details ->
-    //        details.useVersion("3.3.2-5309881")
-    //    }
-    //
-    // }
+    // （KTX拡張を使わない実装にしているので必須ではありませんが、入っていてもOK）
+    implementation "androidx.fragment:fragment-ktx:1.8.6"
 }

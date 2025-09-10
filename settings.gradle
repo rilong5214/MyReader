@@ -1,1 +1,21 @@
-include ':folioreader', ':sample'
+pluginManagement {
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+        maven { url "https://jitpack.io" } // FolioReader の古い依存が必要な場合に備え
+    }
+}
+
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)
+    repositories {
+        google()
+        mavenCentral()
+        maven { url "https://jitpack.io" }
+    }
+}
+
+// 既存のモジュール名に合わせてください（例）
+rootProject.name = "MyReader"
+include(":folioreader", ":sample")
