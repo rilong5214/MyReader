@@ -3,7 +3,7 @@ package com.folioreader.model.locators
 import android.os.Build
 import android.os.Parcel
 import android.os.Parcelable
-import androidx.annotation.RequiresApi
+// import androidx.annotation.RequiresApi
 import com.folioreader.model.highlight.HighlightImpl
 import com.folioreader.model.highlight.TextSelectionImpl
 import org.json.JSONObject
@@ -87,7 +87,6 @@ class SearchLocator : Parcelable {
     }
 
 
-    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     constructor(parcel: Parcel) : this() {
         href = parcel.readString()
         title = parcel.readString()
@@ -95,12 +94,22 @@ class SearchLocator : Parcelable {
         text = parcel.readParcelable(HighlightText::class.java.classLoader)
         pre = parcel.readString()
         post = parcel.readString()
-        highlight = parcel.readSerializable(HighlightImpl::class.java.classLoader, HighlightImpl::class.java)
-            ?: HighlightImpl()
-        textSelection = parcel.readSerializable(TextSelectionImpl::class.java.classLoader, TextSelectionImpl::class.java)
-            ?: TextSelectionImpl()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            highlight = parcel.readSerializable(HighlightImpl::class.java.classLoader, HighlightImpl::class.java) ?: HighlightImpl()
+            textSelection = parcel.readSerializable(TextSelectionImpl::class.java.classLoader, TextSelectionImpl::class.java) ?: TextSelectionImpl()
+            searchItemType = parcel.readSerializable(SearchItemType::class.java.classLoader, SearchItemType::class.java)
+        } else {
+            @Suppress("DEPRECATION")
+            val h = parcel.readSerializable() as? HighlightImpl ?: HighlightImpl()
+            @Suppress("DEPRECATION")
+            val ts = parcel.readSerializable() as? TextSelectionImpl ?: TextSelectionImpl()
+            @Suppress("DEPRECATION")
+            val sit = parcel.readSerializable() as? SearchItemType
+            highlight = h
+            textSelection = ts
+            searchItemType = sit
+        }
         rank = parcel.readInt()
-        searchItemType = parcel.readSerializable(SearchItemType::class.java.classLoader, SearchItemType::class.java)
         primaryContents = parcel.readString()
     }
 
@@ -123,7 +132,6 @@ class SearchLocator : Parcelable {
     }
 
     companion object CREATOR : Parcelable.Creator<SearchLocator> {
-        @RequiresApi(Build.VERSION_CODES.TIRAMISU)
         override fun createFromParcel(parcel: Parcel): SearchLocator {
             return SearchLocator(parcel)
         }

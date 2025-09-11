@@ -4,55 +4,86 @@ import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
-import com.folioreader.android.sample.R
-import com.folioreader.v3.Readium3Starter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
 
+/**
+ * Reader3Activity - Readium 3 直接 API 使用のためのアクティビティ
+ *
+ * 完了した作業:
+ * リフレクション wrapper (Readium3Starter) を除去
+ * 直接 Readium 3 依存関係 (3.1.1) が利用可能
+ * TheSilverChair.epub が assets に配置済み
+ * activity_reader3.xml レイアウトが準備済み
+ * AndroidManifest.xml に正しい LAUNCHER 設定済み
+ * build.gradle に必要な依存関係が追加済み
+ * "./gradlew :sample:assembleDebug" が成功
+ * "Readium 3 is not available on classpath" エラーが解消
+ *
+ * 現在の課題:
+ * Import パス解決が必要 - Readium 3.1.1 の正確な package 構造の特定
+ *
+ * 既知の API (migration guide より):
+ * - FileAsset(file) で EPUB ファイルを開く
+ * - Streamer(context) でストリーマーを作成
+ * - streamer.open(asset, allowUserInteraction = false) で Publication を取得
+ * - EpubNavigatorFactory(publication) でナビゲーター作成
+ *
+ * 次のステップ:
+ * 1. 正確な import パスの特定（org.readium.r2.* の構造）
+ * 2. API の実装とテスト
+ * 3. Fragment の埋め込み完了
+ */
 class Reader3Activity : AppCompatActivity() {
-
-    private lateinit var starter: Readium3Starter
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_reader3)
 
-        // Readium 3 をリフレクションで起動するスターター（依存が無くてもビルド可）
-        starter = Readium3Starter(applicationContext)
-
-        // assets に置いたサンプル EPUB を /cache にコピーして開く
         lifecycleScope.launch {
             try {
-                val epubFile = copyEpubFromAssetsIfNeeded("sample.epub")
-                starter.openEpub(
-                    epubFile,
-                    onReady = {
-                        Toast.makeText(this@Reader3Activity, "EPUB loaded", Toast.LENGTH_SHORT).show()
-                        // TODO: Readium 3 がクラスパスにある場合、ここで Navigator を表示する処理を追加できます。
-                    },
-                    onError = { err ->
-                        Toast.makeText(this@Reader3Activity, "EPUBを開けません: ${err.message}", Toast.LENGTH_LONG).show()
-                    }
-                )
+                // assets/TheSilverChair.epub を /cache にコピー
+                val epubFile = copyFromAssetsIfNeeded("TheSilverChair.epub")
+
+                // TODO: Readium 3 の直接 API 使用を実装
+                // 正確な import パス特定後に実装:
+                // val streamer = Streamer(this@Reader3Activity)
+                // val result = streamer.open(FileAsset(epubFile), allowUserInteraction = false)
+                // result.onSuccess { publication ->
+                //     val navigatorFactory = EpubNavigatorFactory(publication)
+                //     val fragmentFactory = navigatorFactory.createFragmentFactory(null)
+                //     supportFragmentManager.fragmentFactory = fragmentFactory
+                //     val fragment = fragmentFactory.instantiate(classLoader, EpubNavigatorFragment::class.java.name)
+                //     supportFragmentManager.beginTransaction()
+                //         .replace(R.id.readerContainer, fragment, "epub-nav")
+                //         .commit()
+                //     Toast.makeText(this@Reader3Activity, "EPUB 読み込み完了", Toast.LENGTH_SHORT).show()
+                // }.onFailure { error ->
+                //     Toast.makeText(this@Reader3Activity, "EPUBを開けません: ${error.message}", Toast.LENGTH_LONG).show()
+                // }
+
+                Toast.makeText(
+                    this@Reader3Activity,
+                    "Readium 3 統合準備完了 - Import パス解決が必要",
+                    Toast.LENGTH_LONG
+                ).show()
+
             } catch (t: Throwable) {
-                Toast.makeText(this@Reader3Activity, "初期化エラー: ${t.message}", Toast.LENGTH_LONG).show()
+                Toast.makeText(this@Reader3Activity,
+                    "初期化エラー: ${t.message}", Toast.LENGTH_LONG
+                ).show()
             }
         }
     }
 
-    /**
-     * assets/sample.epub を /cache/sample.epub にコピー（既にあれば流用）
-     */
-    private suspend fun copyEpubFromAssetsIfNeeded(name: String): File = withContext(Dispatchers.IO) {
+    private suspend fun copyFromAssetsIfNeeded(name: String): File = withContext(Dispatchers.IO) {
         val out = File(cacheDir, name)
         if (!out.exists() || out.length() == 0L) {
             assets.open(name).use { input ->
-                FileOutputStream(out).use { output ->
-                    input.copyTo(output)
-                }
+                FileOutputStream(out).use { output -> input.copyTo(output) }
             }
         }
         out

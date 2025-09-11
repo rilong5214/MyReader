@@ -3,7 +3,7 @@ package com.folioreader.model.locators
 import android.os.Build
 import android.os.Parcel
 import android.os.Parcelable
-import androidx.annotation.RequiresApi
+// import androidx.annotation.RequiresApi
 import com.folioreader.model.highlight.HighlightImpl
 import com.folioreader.model.highlight.TextSelectionImpl
 // import com.folioreader.util.AppUtil // Keep AppUtil commented if it causes issues
@@ -35,14 +35,22 @@ class ReadLocator : Parcelable {
         this.text = text
     }
 
-    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     constructor(parcel: Parcel) : this() {
         href = parcel.readString()
         created = parcel.readLong()
         locations = parcel.readParcelable(Locations::class.java.classLoader)
         text = parcel.readParcelable(HighlightText::class.java.classLoader)
-        highlight = parcel.readSerializable(HighlightImpl::class.java.classLoader, HighlightImpl::class.java)
-        textSelection = parcel.readSerializable(TextSelectionImpl::class.java.classLoader, TextSelectionImpl::class.java)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            highlight = parcel.readSerializable(HighlightImpl::class.java.classLoader, HighlightImpl::class.java)
+            textSelection = parcel.readSerializable(TextSelectionImpl::class.java.classLoader, TextSelectionImpl::class.java)
+        } else {
+            @Suppress("DEPRECATION")
+            val h = parcel.readSerializable() as? HighlightImpl
+            @Suppress("DEPRECATION")
+            val ts = parcel.readSerializable() as? TextSelectionImpl
+            highlight = h
+            textSelection = ts
+        }
         rangy = parcel.readString()
         bookId = parcel.readString()
         pageId = parcel.readString()
@@ -90,7 +98,6 @@ class ReadLocator : Parcelable {
     }
 
     companion object CREATOR : Parcelable.Creator<ReadLocator> {
-        @RequiresApi(Build.VERSION_CODES.TIRAMISU)
         override fun createFromParcel(parcel: Parcel): ReadLocator {
             return ReadLocator(parcel)
         }
